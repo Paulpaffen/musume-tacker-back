@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { HealthController } from './health.controller';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -17,5 +18,6 @@ import { StatsModule } from './stats/stats.module';
     RunModule,
     StatsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
