@@ -7,11 +7,19 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://musume-tracker-front-bfsxxjk6b-pauls-projects-033a6945.vercel.app', // Vercel frontend
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'https://musume-tracker-front-bfsxxjk6b-pauls-projects-033a6945.vercel.app',
+        process.env.FRONTEND_URL,
+      ];
+      // Permitir llamadas sin origin (Postman, health checks)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked: ${origin}`), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
