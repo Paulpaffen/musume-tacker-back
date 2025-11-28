@@ -31,9 +31,6 @@ Thumbs.db
 # Testing
 coverage/
 
-# Prisma
-prisma/migrations/
-
 # Docker volumes
 postgres_data/
 
