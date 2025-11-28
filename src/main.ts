@@ -13,11 +13,14 @@ async function bootstrap() {
         'https://musume-tracker-front-bfsxxjk6b-pauls-projects-033a6945.vercel.app',
         process.env.FRONTEND_URL,
       ];
-      // Permitir llamadas sin origin (Postman, health checks)
+
+      // Allow calls without origin (mobile apps, Postman, health checks)
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       return callback(new Error(`CORS blocked: ${origin}`), false);
     },
     credentials: true,
@@ -25,7 +28,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Enable validation globally
+  // Global validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -34,8 +37,11 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  const port = process.env.PORT || 3000;
+
+  // 🚀 REQUIRED FOR RAILWAY
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`🚀 Application is running on port: ${port}`);
 }
 bootstrap();
