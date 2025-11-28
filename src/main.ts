@@ -10,7 +10,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       const allowedOrigins = [
         'http://localhost:3000',
-        'https://musume-tracker-front-j8g0f8esd-pauls-projects-033a6945.vercel.app',
+        'https://musume-tracker-front-9zfwfjrk4-pauls-projects-033a6945.vercel.app',
         process.env.FRONTEND_URL,
       ];
 
