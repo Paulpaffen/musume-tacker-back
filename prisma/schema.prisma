@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  characters CharacterTraining[]
+
+  @@map("users")
+}
+
+model CharacterTraining {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  characterName      String   @map("character_name")
+  identifierVersion  String   @map("identifier_version")
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs Run[]
+
+  @@map("character_trainings")
+}
+
+enum TrackType {
+  TURF_SHORT     // Césped Corto
+  TURF_MILE      // Césped Milla
+  TURF_MEDIUM    // Césped Medio
+  TURF_LONG      // Césped Largo
+  DIRT           // Tierra
+}
+
+model Run {
+  id                     String    @id @default(uuid())
+  characterTrainingId    String    @map("character_training_id")
+  trackType              TrackType @map("track_type")
+  finalPlace             Int       @map("final_place")
+  rareSkillsCount        Int       @default(0) @map("rare_skills_count")
+  normalSkillsCount      Int       @default(0) @map("normal_skills_count")
+  uniqueSkillActivated   Boolean   @default(false) @map("unique_skill_activated")
+  goodPositioning        Boolean   @default(false) @map("good_positioning")
+  rushed                 Boolean   @default(false)
+  score                  Int
+  date                   DateTime  @default(now())
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  characterTraining CharacterTraining @relation(fields: [characterTrainingId], references: [id], onDelete: Cascade)
+
+  @@map("runs")
+}
