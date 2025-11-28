@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://musume-tracker-front-83sldsak5-pauls-projects-033a6945.vercel.app', // Vercel frontend
+      'https://musume-tracker-front-bfsxxjk6b-pauls-projects-033a6945.vercel.app', // Vercel frontend
       process.env.FRONTEND_URL || 'http://localhost:3000',
     ],
     credentials: true,
