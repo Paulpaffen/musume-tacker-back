@@ -9,6 +9,7 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
+        'http://localhost:3001',
         'http://localhost:3000',
         'https://musume-tracker-front.vercel.app',
         process.env.FRONTEND_URL,

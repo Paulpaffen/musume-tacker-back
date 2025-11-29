@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CharacterModule } from './character/character.module';
 import { RunModule } from './run/run.module';
 import { StatsModule } from './stats/stats.module';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { StatsModule } from './stats/stats.module';
     CharacterModule,
     RunModule,
     StatsModule,
+    OcrModule,
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule { }
