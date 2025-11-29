@@ -5,7 +5,7 @@ import { UpdateCharacterDto } from './dto/update-character.dto';
 
 @Injectable()
 export class CharacterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createCharacterDto: CreateCharacterDto) {
     return this.prisma.characterTraining.create({
@@ -93,21 +93,32 @@ export class CharacterService {
   }
 
   async findCandidates(userId: string, detectedName: string) {
-    // Partial match, case-insensitive
-    return this.prisma.characterTraining.findMany({
-      where: {
-        userId,
-        characterName: {
-          contains: detectedName,
-          mode: 'insensitive',
-        },
-      },
+    // Get all user characters to perform fuzzy matching in memory
+    const userCharacters = await this.prisma.characterTraining.findMany({
+      where: { userId },
       select: {
         id: true,
         characterName: true,
         identifierVersion: true,
       },
-      take: 10,
     });
+
+    const detectedLower = detectedName.toLowerCase();
+
+    // Filter candidates based on bidirectional inclusion
+    const candidates = userCharacters.filter(char => {
+      const charNameLower = char.characterName.toLowerCase();
+
+      // Check 1: Detected name contains character name (e.g. "xs Gold Ship !,af" contains "gold ship")
+      if (detectedLower.includes(charNameLower)) return true;
+
+      // Check 2: Character name contains detected name (e.g. "Gold Ship" contains "gold")
+      // We add a length check to avoid matching very short detected strings like "a" or "s" to everything
+      if (detectedLower.length > 2 && charNameLower.includes(detectedLower)) return true;
+
+      return false;
+    });
+
+    return candidates.slice(0, 10);
   }
 }

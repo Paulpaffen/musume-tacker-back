@@ -8,9 +8,19 @@ import { PrismaService } from '../prisma/prisma.service';
 export class OcrService {
     constructor(private prisma: PrismaService) { }
 
-    async processImages(files: Array<Express.Multer.File>) {
-        console.log('OCR Service: processing', files.length, 'files');
+    async processImages(files: Array<Express.Multer.File>, userId: string) {
+        console.log('OCR Service: processing', files.length, 'files', 'for user', userId);
         const results = [];
+
+        // Fetch all user characters once for efficiency
+        const userCharacters = await this.prisma.characterTraining.findMany({
+            where: { userId },
+            select: {
+                id: true,
+                characterName: true,
+                identifierVersion: true,
+            },
+        });
 
         for (const file of files) {
             console.log('Processing file:', file.originalname, 'size:', file.size);
@@ -23,7 +33,7 @@ export class OcrService {
 
             // Match with database
             for (const item of parsedItems) {
-                const match = await this.matchCharacter(item.detectedName);
+                const match = this.matchCharacter(item.detectedName, userCharacters);
                 console.log('Match for', item.detectedName, ':', match);
                 results.push({
                     ...item,
@@ -99,31 +109,22 @@ export class OcrService {
         return items;
     }
 
-    private async matchCharacter(detectedName: string) {
-        // Basic fuzzy matching could be added here, but for now exact or partial match
-        // We search for characters that contain the detected name or vice versa
+    private matchCharacter(detectedName: string, userCharacters: any[]) {
+        // Normalize detected name: lowercase
+        const detectedLower = detectedName.toLowerCase();
 
-        // Get all user's characters (assuming we have user context, but for now get all to filter)
-        // TODO: In a real scenario, we need the userId. For now, we'll return candidates globally 
-        // or we need to pass userId to this service.
-        // Let's assume we pass a hardcoded userId or just search all for this MVP step.
+        // Filter candidates based on bidirectional inclusion
+        const candidates = userCharacters.filter(char => {
+            const charNameLower = char.characterName.toLowerCase();
 
-        // Ideally, the controller should pass the userId from the request.
-        // I will update the controller later to extract userId from JWT.
+            // Check 1: Detected name contains character name (e.g. "xs Gold Ship !,af" contains "gold ship")
+            if (detectedLower.includes(charNameLower)) return true;
 
-        const candidates = await this.prisma.characterTraining.findMany({
-            where: {
-                characterName: {
-                    contains: detectedName,
-                    mode: 'insensitive',
-                },
-            },
-            select: {
-                id: true,
-                characterName: true,
-                identifierVersion: true,
-            },
-            take: 5,
+            // Check 2: Character name contains detected name (e.g. "Gold Ship" contains "gold")
+            // We add a length check to avoid matching very short detected strings like "a" or "s" to everything
+            if (detectedLower.length > 2 && charNameLower.includes(detectedLower)) return true;
+
+            return false;
         });
 
         return {
