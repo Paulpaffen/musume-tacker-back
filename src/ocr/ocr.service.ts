@@ -35,15 +35,52 @@ export class OcrService {
             for (const item of parsedItems) {
                 const match = this.matchCharacter(item.detectedName, userCharacters);
                 console.log('Match for', item.detectedName, ':', match);
+
+                let defaults = { trackType: 'TURF_MEDIUM', finalPlace: 1 };
+                if (match.bestMatchId) {
+                    defaults = await this.getCharacterDefaults(match.bestMatchId);
+                }
+
                 results.push({
                     ...item,
                     ...match,
+                    defaults,
                 });
             }
         }
 
         console.log('OCR Service: finished processing');
         return results;
+    }
+
+    private async getCharacterDefaults(characterId: string) {
+        const runs = await this.prisma.run.findMany({
+            where: { characterTrainingId: characterId },
+            select: { trackType: true, finalPlace: true }
+        });
+
+        if (runs.length === 0) {
+            return { trackType: 'TURF_MEDIUM', finalPlace: 1 };
+        }
+
+        // Calculate mode for trackType
+        const trackCounts: Record<string, number> = {};
+        let maxCount = 0;
+        let modeTrack = 'TURF_MEDIUM';
+
+        for (const run of runs) {
+            trackCounts[run.trackType] = (trackCounts[run.trackType] || 0) + 1;
+            if (trackCounts[run.trackType] > maxCount) {
+                maxCount = trackCounts[run.trackType];
+                modeTrack = run.trackType;
+            }
+        }
+
+        // Calculate average for finalPlace
+        const totalPlace = runs.reduce((sum, run) => sum + run.finalPlace, 0);
+        const avgPlace = Math.max(1, Math.round(totalPlace / runs.length));
+
+        return { trackType: modeTrack, finalPlace: avgPlace };
     }
 
     private async preprocessImage(buffer: Buffer): Promise<Buffer> {

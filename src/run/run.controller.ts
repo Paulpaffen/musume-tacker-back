@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('runs')
 @UseGuards(JwtAuthGuard)
 export class RunController {
-  constructor(private readonly runService: RunService) {}
+  constructor(private readonly runService: RunService) { }
 
   @Post()
   create(@Request() req, @Body() createRunDto: CreateRunDto) {
@@ -26,8 +26,35 @@ export class RunController {
   }
 
   @Get()
-  findAll(@Request() req, @Query('characterTrainingId') characterTrainingId?: string) {
-    return this.runService.findAll(req.user.id, characterTrainingId);
+  findAll(
+    @Request() req,
+    @Query('characterTrainingId') characterTrainingId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('minPlace') minPlace?: string,
+    @Query('maxPlace') maxPlace?: string,
+    @Query('minScore') minScore?: string,
+    @Query('maxScore') maxScore?: string,
+    @Query('rareSkills') rareSkills?: string,
+    @Query('normalSkills') normalSkills?: string,
+    @Query('rushed') rushed?: string,
+    @Query('goodPositioning') goodPositioning?: string,
+    @Query('uniqueSkillActivated') uniqueSkillActivated?: string,
+  ) {
+    return this.runService.findAll(req.user.id, {
+      characterTrainingId,
+      startDate,
+      endDate,
+      minPlace: minPlace ? parseInt(minPlace) : undefined,
+      maxPlace: maxPlace ? parseInt(maxPlace) : undefined,
+      minScore: minScore ? parseInt(minScore) : undefined,
+      maxScore: maxScore ? parseInt(maxScore) : undefined,
+      rareSkills: rareSkills ? parseInt(rareSkills) : undefined,
+      normalSkills: normalSkills ? parseInt(normalSkills) : undefined,
+      rushed: rushed === 'true' ? true : rushed === 'false' ? false : undefined,
+      goodPositioning: goodPositioning === 'true' ? true : goodPositioning === 'false' ? false : undefined,
+      uniqueSkillActivated: uniqueSkillActivated === 'true' ? true : uniqueSkillActivated === 'false' ? false : undefined,
+    });
   }
 
   @Get(':id')

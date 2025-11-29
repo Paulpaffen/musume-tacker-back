@@ -5,7 +5,7 @@ import { UpdateRunDto } from './dto/update-run.dto';
 
 @Injectable()
 export class RunService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createRunDto: CreateRunDto) {
     // Verify character belongs to user
@@ -37,14 +37,28 @@ export class RunService {
     });
   }
 
-  async findAll(userId: string, characterTrainingId?: string) {
+  async findAll(userId: string, filters: {
+    characterTrainingId?: string;
+    startDate?: string;
+    endDate?: string;
+    minPlace?: number;
+    maxPlace?: number;
+    minScore?: number;
+    maxScore?: number;
+    rareSkills?: number;
+    normalSkills?: number;
+    rushed?: boolean;
+    goodPositioning?: boolean;
+    uniqueSkillActivated?: boolean;
+  }) {
     // Build where clause
     const where: any = {};
 
-    if (characterTrainingId) {
+    // Filter by character(s)
+    if (filters.characterTrainingId) {
       // Verify character belongs to user
       const character = await this.prisma.characterTraining.findUnique({
-        where: { id: characterTrainingId },
+        where: { id: filters.characterTrainingId },
       });
 
       if (!character) {
@@ -55,7 +69,7 @@ export class RunService {
         throw new ForbiddenException('Access denied');
       }
 
-      where.characterTrainingId = characterTrainingId;
+      where.characterTrainingId = filters.characterTrainingId;
     } else {
       // Get all runs for all user's characters
       const userCharacters = await this.prisma.characterTraining.findMany({
@@ -67,6 +81,36 @@ export class RunService {
         in: userCharacters.map((c) => c.id),
       };
     }
+
+    // Date filters
+    if (filters.startDate || filters.endDate) {
+      where.date = {};
+      if (filters.startDate) where.date.gte = new Date(filters.startDate);
+      if (filters.endDate) where.date.lte = new Date(filters.endDate);
+    }
+
+    // Place filters
+    if (filters.minPlace !== undefined || filters.maxPlace !== undefined) {
+      where.finalPlace = {};
+      if (filters.minPlace !== undefined) where.finalPlace.gte = filters.minPlace;
+      if (filters.maxPlace !== undefined) where.finalPlace.lte = filters.maxPlace;
+    }
+
+    // Score filters
+    if (filters.minScore !== undefined || filters.maxScore !== undefined) {
+      where.score = {};
+      if (filters.minScore !== undefined) where.score.gte = filters.minScore;
+      if (filters.maxScore !== undefined) where.score.lte = filters.maxScore;
+    }
+
+    // Skills filters
+    if (filters.rareSkills !== undefined) where.rareSkillsCount = { gte: filters.rareSkills };
+    if (filters.normalSkills !== undefined) where.normalSkillsCount = { gte: filters.normalSkills };
+
+    // Status filters
+    if (filters.rushed !== undefined) where.rushed = filters.rushed;
+    if (filters.goodPositioning !== undefined) where.goodPositioning = filters.goodPositioning;
+    if (filters.uniqueSkillActivated !== undefined) where.uniqueSkillActivated = filters.uniqueSkillActivated;
 
     return this.prisma.run.findMany({
       where,

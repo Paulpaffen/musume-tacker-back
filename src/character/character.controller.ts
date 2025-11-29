@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { CharacterService } from './character.service';
 import { CreateCharacterDto } from './dto/create-character.dto';
@@ -17,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('characters')
 @UseGuards(JwtAuthGuard)
 export class CharacterController {
-  constructor(private readonly characterService: CharacterService) {}
+  constructor(private readonly characterService: CharacterService) { }
 
   @Post()
   create(@Request() req, @Body() createCharacterDto: CreateCharacterDto) {
@@ -25,8 +26,17 @@ export class CharacterController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.characterService.findAll(req.user.id);
+  findAll(
+    @Request() req,
+    @Query('name') name?: string,
+    @Query('minRuns') minRuns?: string,
+    @Query('maxRuns') maxRuns?: string,
+  ) {
+    return this.characterService.findAll(req.user.id, {
+      name,
+      minRuns: minRuns ? parseInt(minRuns) : undefined,
+      maxRuns: maxRuns ? parseInt(maxRuns) : undefined,
+    });
   }
 
   @Get('candidates')

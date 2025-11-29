@@ -16,9 +16,37 @@ export class CharacterService {
     });
   }
 
-  async findAll(userId: string) {
-    return this.prisma.characterTraining.findMany({
-      where: { userId },
+  async findAll(userId: string, filters?: {
+    name?: string;
+    minRuns?: number;
+    maxRuns?: number;
+  }) {
+    const where: any = { userId };
+
+    if (filters?.name) {
+      where.characterName = {
+        contains: filters.name,
+        mode: 'insensitive',
+      };
+    }
+
+    // Prisma doesn't support filtering by relation count directly in the top-level where clause easily in all versions without 'relationLoadStrategy' or raw queries, 
+    // but we can use the 'every/some/none' or just filter in memory if the dataset is small.
+    // However, a better approach for count filtering is usually to use aggregation or just fetch and filter.
+    // Given this is likely a small app, fetching and filtering in memory is acceptable for "minRuns/maxRuns".
+    // Alternatively, we can use:
+    /*
+    where.runs = {
+       _count: {
+         gte: filters.minRuns
+       }
+    }
+    */
+    // But this syntax depends on Prisma version. Let's try the standard way if supported, or fallback to in-memory.
+    // Actually, let's stick to simple in-memory filtering for the count to be safe and robust.
+
+    const characters = await this.prisma.characterTraining.findMany({
+      where,
       include: {
         _count: {
           select: { runs: true },
@@ -26,6 +54,17 @@ export class CharacterService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (filters?.minRuns !== undefined || filters?.maxRuns !== undefined) {
+      return characters.filter(char => {
+        const count = char._count.runs;
+        if (filters.minRuns !== undefined && count < filters.minRuns) return false;
+        if (filters.maxRuns !== undefined && count > filters.maxRuns) return false;
+        return true;
+      });
+    }
+
+    return characters;
   }
 
   async findOne(id: string, userId: string) {
