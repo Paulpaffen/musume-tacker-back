@@ -4,7 +4,7 @@ import { TrackType } from '@prisma/client';
 
 @Injectable()
 export class StatsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getDashboardStats(userId: string) {
     // Get all user's characters
@@ -186,6 +186,8 @@ export class StatsService {
         uniqueSkillRate: 0,
         rushedRate: 0,
         goodPositioningRate: 0,
+        averageRareSkills: 0,
+        averageNormalSkills: 0,
       };
     }
 
@@ -224,6 +226,37 @@ export class StatsService {
       uniqueSkillRate,
       rushedRate,
       goodPositioningRate,
+      averageRareSkills: parseFloat((runs.reduce((sum, run) => sum + run.rareSkillsCount, 0) / totalRuns).toFixed(2)),
+      averageNormalSkills: parseFloat((runs.reduce((sum, run) => sum + run.normalSkillsCount, 0) / totalRuns).toFixed(2)),
     };
+  }
+
+  async compareCharacters(characterIds: string[], userId: string) {
+    // Verify all characters belong to user
+    const characters = await this.prisma.characterTraining.findMany({
+      where: {
+        id: { in: characterIds },
+        userId,
+      },
+      select: { id: true, characterName: true, identifierVersion: true },
+    });
+
+    if (characters.length !== characterIds.length) {
+      throw new Error('Some characters not found or access denied');
+    }
+
+    const comparisonResults = await Promise.all(
+      characters.map(async (char) => {
+        const stats = await this.getCharacterStats(char.id, userId);
+        return {
+          characterId: char.id,
+          characterName: char.characterName,
+          identifierVersion: char.identifierVersion,
+          ...stats,
+        };
+      })
+    );
+
+    return comparisonResults;
   }
 }
