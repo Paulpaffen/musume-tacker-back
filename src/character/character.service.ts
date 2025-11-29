@@ -91,4 +91,23 @@ export class CharacterService {
 
     return { message: 'Character deleted successfully' };
   }
+
+  async findCandidates(userId: string, detectedName: string) {
+    // Partial match, case-insensitive
+    return this.prisma.characterTraining.findMany({
+      where: {
+        userId,
+        characterName: {
+          contains: detectedName,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        characterName: true,
+        identifierVersion: true,
+      },
+      take: 10,
+    });
+  }
 }

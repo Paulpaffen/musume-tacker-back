@@ -29,6 +29,14 @@ export class CharacterController {
     return this.characterService.findAll(req.user.id);
   }
 
+  @Get('candidates')
+  async getCandidates(@Request() req) {
+    // Accept detectedName from query string for flexibility
+    const detectedName = req.query.name;
+    if (!detectedName) return [];
+    return this.characterService.findCandidates(req.user.id, detectedName);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.characterService.findOne(id, req.user.id);
