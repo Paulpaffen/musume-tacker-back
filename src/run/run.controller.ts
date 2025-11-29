@@ -29,6 +29,7 @@ export class RunController {
   findAll(
     @Request() req,
     @Query('characterTrainingId') characterTrainingId?: string,
+    @Query('trackType') trackType?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('minPlace') minPlace?: string,
@@ -43,6 +44,7 @@ export class RunController {
   ) {
     return this.runService.findAll(req.user.id, {
       characterTrainingId,
+      trackType,
       startDate,
       endDate,
       minPlace: minPlace ? parseInt(minPlace) : undefined,

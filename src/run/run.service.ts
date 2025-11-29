@@ -39,6 +39,7 @@ export class RunService {
 
   async findAll(userId: string, filters: {
     characterTrainingId?: string;
+    trackType?: string;
     startDate?: string;
     endDate?: string;
     minPlace?: number;
@@ -80,6 +81,11 @@ export class RunService {
       where.characterTrainingId = {
         in: userCharacters.map((c) => c.id),
       };
+    }
+
+    // Track type filter
+    if (filters.trackType) {
+      where.trackType = filters.trackType;
     }
 
     // Date filters
