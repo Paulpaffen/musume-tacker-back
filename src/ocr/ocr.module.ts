@@ -4,8 +4,8 @@ import { OcrController } from './ocr.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [OcrController],
-    providers: [OcrService],
+  imports: [PrismaModule],
+  controllers: [OcrController],
+  providers: [OcrService],
 })
-export class OcrModule { }
+export class OcrModule {}

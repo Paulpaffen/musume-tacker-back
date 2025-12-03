@@ -4,7 +4,7 @@ import { TrackType } from '@prisma/client';
 
 @Injectable()
 export class StatsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getDashboardStats(userId: string) {
     // Get all user's characters
@@ -226,8 +226,12 @@ export class StatsService {
       uniqueSkillRate,
       rushedRate,
       goodPositioningRate,
-      averageRareSkills: parseFloat((runs.reduce((sum, run) => sum + run.rareSkillsCount, 0) / totalRuns).toFixed(2)),
-      averageNormalSkills: parseFloat((runs.reduce((sum, run) => sum + run.normalSkillsCount, 0) / totalRuns).toFixed(2)),
+      averageRareSkills: parseFloat(
+        (runs.reduce((sum, run) => sum + run.rareSkillsCount, 0) / totalRuns).toFixed(2),
+      ),
+      averageNormalSkills: parseFloat(
+        (runs.reduce((sum, run) => sum + run.normalSkillsCount, 0) / totalRuns).toFixed(2),
+      ),
     };
   }
 
@@ -254,7 +258,7 @@ export class StatsService {
           identifierVersion: char.identifierVersion,
           ...stats,
         };
-      })
+      }),
     );
 
     return comparisonResults;
@@ -277,7 +281,7 @@ export class StatsService {
 
       // Calculate stats for each character on this track
       const characterStats = characters
-        .map(char => {
+        .map((char) => {
           const trackRuns = char.runs;
           if (trackRuns.length === 0) return null;
 
@@ -286,7 +290,7 @@ export class StatsService {
           // Count how many times this character ran on each track
           const allRuns = char.runs;
           const trackCounts: Record<string, number> = {};
-          allRuns.forEach(run => {
+          allRuns.forEach((run) => {
             trackCounts[run.trackType] = (trackCounts[run.trackType] || 0) + 1;
           });
 
@@ -310,7 +314,7 @@ export class StatsService {
             isMostPlayedTrack: mostPlayedTrack === trackType,
           };
         })
-        .filter(stat => stat !== null && stat.isMostPlayedTrack) // Only characters where this is their most played track
+        .filter((stat) => stat !== null && stat.isMostPlayedTrack) // Only characters where this is their most played track
         .sort((a, b) => b!.averageScore - a!.averageScore) // Sort by average score descending
         .slice(0, 3); // Top 3
 

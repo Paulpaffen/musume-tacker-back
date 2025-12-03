@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('characters')
 @UseGuards(JwtAuthGuard)
 export class CharacterController {
-  constructor(private readonly characterService: CharacterService) { }
+  constructor(private readonly characterService: CharacterService) {}
 
   @Post()
   create(@Request() req, @Body() createCharacterDto: CreateCharacterDto) {

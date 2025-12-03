@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('runs')
 @UseGuards(JwtAuthGuard)
 export class RunController {
-  constructor(private readonly runService: RunService) { }
+  constructor(private readonly runService: RunService) {}
 
   @Post()
   create(@Request() req, @Body() createRunDto: CreateRunDto) {
@@ -54,8 +54,14 @@ export class RunController {
       rareSkills: rareSkills ? parseInt(rareSkills) : undefined,
       normalSkills: normalSkills ? parseInt(normalSkills) : undefined,
       rushed: rushed === 'true' ? true : rushed === 'false' ? false : undefined,
-      goodPositioning: goodPositioning === 'true' ? true : goodPositioning === 'false' ? false : undefined,
-      uniqueSkillActivated: uniqueSkillActivated === 'true' ? true : uniqueSkillActivated === 'false' ? false : undefined,
+      goodPositioning:
+        goodPositioning === 'true' ? true : goodPositioning === 'false' ? false : undefined,
+      uniqueSkillActivated:
+        uniqueSkillActivated === 'true'
+          ? true
+          : uniqueSkillActivated === 'false'
+            ? false
+            : undefined,
     });
   }
 

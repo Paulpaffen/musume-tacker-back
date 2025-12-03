@@ -7,6 +7,8 @@ import { CharacterModule } from './character/character.module';
 import { RunModule } from './run/run.module';
 import { StatsModule } from './stats/stats.module';
 import { OcrModule } from './ocr/ocr.module';
+import { FriendsModule } from './friends/friends.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { OcrModule } from './ocr/ocr.module';
     RunModule,
     StatsModule,
     OcrModule,
+    FriendsModule,
+    ProfileModule,
   ],
   controllers: [HealthController],
 })
-export class AppModule { }
+export class AppModule {}

@@ -5,7 +5,7 @@ import { UpdateRunDto } from './dto/update-run.dto';
 
 @Injectable()
 export class RunService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createRunDto: CreateRunDto) {
     // Verify character belongs to user
@@ -37,21 +37,24 @@ export class RunService {
     });
   }
 
-  async findAll(userId: string, filters: {
-    characterTrainingId?: string;
-    trackType?: string;
-    startDate?: string;
-    endDate?: string;
-    minPlace?: number;
-    maxPlace?: number;
-    minScore?: number;
-    maxScore?: number;
-    rareSkills?: number;
-    normalSkills?: number;
-    rushed?: boolean;
-    goodPositioning?: boolean;
-    uniqueSkillActivated?: boolean;
-  }) {
+  async findAll(
+    userId: string,
+    filters: {
+      characterTrainingId?: string;
+      trackType?: string;
+      startDate?: string;
+      endDate?: string;
+      minPlace?: number;
+      maxPlace?: number;
+      minScore?: number;
+      maxScore?: number;
+      rareSkills?: number;
+      normalSkills?: number;
+      rushed?: boolean;
+      goodPositioning?: boolean;
+      uniqueSkillActivated?: boolean;
+    },
+  ) {
     // Build where clause
     const where: any = {};
 
@@ -116,7 +119,8 @@ export class RunService {
     // Status filters
     if (filters.rushed !== undefined) where.rushed = filters.rushed;
     if (filters.goodPositioning !== undefined) where.goodPositioning = filters.goodPositioning;
-    if (filters.uniqueSkillActivated !== undefined) where.uniqueSkillActivated = filters.uniqueSkillActivated;
+    if (filters.uniqueSkillActivated !== undefined)
+      where.uniqueSkillActivated = filters.uniqueSkillActivated;
 
     return this.prisma.run.findMany({
       where,

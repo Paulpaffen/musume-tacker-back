@@ -5,7 +5,7 @@ import { UpdateCharacterDto } from './dto/update-character.dto';
 
 @Injectable()
 export class CharacterService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createCharacterDto: CreateCharacterDto) {
     return this.prisma.characterTraining.create({
@@ -16,11 +16,14 @@ export class CharacterService {
     });
   }
 
-  async findAll(userId: string, filters?: {
-    name?: string;
-    minRuns?: number;
-    maxRuns?: number;
-  }) {
+  async findAll(
+    userId: string,
+    filters?: {
+      name?: string;
+      minRuns?: number;
+      maxRuns?: number;
+    },
+  ) {
     const where: any = { userId };
 
     if (filters?.name) {
@@ -30,7 +33,7 @@ export class CharacterService {
       };
     }
 
-    // Prisma doesn't support filtering by relation count directly in the top-level where clause easily in all versions without 'relationLoadStrategy' or raw queries, 
+    // Prisma doesn't support filtering by relation count directly in the top-level where clause easily in all versions without 'relationLoadStrategy' or raw queries,
     // but we can use the 'every/some/none' or just filter in memory if the dataset is small.
     // However, a better approach for count filtering is usually to use aggregation or just fetch and filter.
     // Given this is likely a small app, fetching and filtering in memory is acceptable for "minRuns/maxRuns".
@@ -56,7 +59,7 @@ export class CharacterService {
     });
 
     if (filters?.minRuns !== undefined || filters?.maxRuns !== undefined) {
-      return characters.filter(char => {
+      return characters.filter((char) => {
         const count = char._count.runs;
         if (filters.minRuns !== undefined && count < filters.minRuns) return false;
         if (filters.maxRuns !== undefined && count > filters.maxRuns) return false;
@@ -145,7 +148,7 @@ export class CharacterService {
     const detectedLower = detectedName.toLowerCase();
 
     // Filter candidates based on bidirectional inclusion
-    const candidates = userCharacters.filter(char => {
+    const candidates = userCharacters.filter((char) => {
       const charNameLower = char.characterName.toLowerCase();
 
       // Check 1: Detected name contains character name (e.g. "xs Gold Ship !,af" contains "gold ship")

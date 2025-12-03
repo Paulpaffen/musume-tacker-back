@@ -14,13 +14,55 @@ model User {
   id        String   @id @default(uuid())
   username  String   @unique
   password  String
+    friendCode String  @unique @default(cuid()) @map("friend_code")
+    displayName String? @map("display_name")
+    isProfilePublic Boolean @default(false) @map("is_profile_public")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   characters CharacterTraining[]
+    sentFriendRequests Friendship[] @relation("SentRequests")
+    receivedFriendRequests Friendship[] @relation("ReceivedRequests")
+    profileSettings ProfileSettings?
 
   @@map("users")
 }
+
+  enum FriendshipStatus {
+    PENDING
+    ACCEPTED
+    BLOCKED
+  }
+
+  model Friendship {
+    id         String           @id @default(uuid())
+    userId     String           @map("user_id")
+    friendId   String           @map("friend_id")
+    status     FriendshipStatus @default(PENDING)
+    createdAt  DateTime         @default(now()) @map("created_at")
+    acceptedAt DateTime?        @map("accepted_at")
+
+    user   User @relation("SentRequests", fields: [userId], references: [id], onDelete: Cascade)
+    friend User @relation("ReceivedRequests", fields: [friendId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, friendId])
+    @@map("friendships")
+  }
+
+  model ProfileSettings {
+    id                 String   @id @default(uuid())
+    userId             String   @unique @map("user_id")
+    showStats          Boolean  @default(true) @map("show_stats")
+    showCharacters     Boolean  @default(true) @map("show_characters")
+    showBestRuns       Boolean  @default(true) @map("show_best_runs")
+    showRecentActivity Boolean  @default(true) @map("show_recent_activity")
+    createdAt          DateTime @default(now()) @map("created_at")
+    updatedAt          DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("profile_settings")
+  }
 
 model CharacterTraining {
   id                 String   @id @default(uuid())
