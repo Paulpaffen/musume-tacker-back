@@ -259,4 +259,64 @@ export class StatsService {
 
     return comparisonResults;
   }
+
+  async getTeamRecommendations(userId: string) {
+    const trackTypes = ['TURF_SHORT', 'TURF_MILE', 'TURF_MEDIUM', 'TURF_LONG', 'DIRT'];
+    const recommendations: any = {};
+
+    for (const trackType of trackTypes) {
+      // Get all user's characters
+      const characters = await this.prisma.characterTraining.findMany({
+        where: { userId },
+        include: {
+          runs: {
+            where: { trackType: trackType as any },
+          },
+        },
+      });
+
+      // Calculate stats for each character on this track
+      const characterStats = characters
+        .map(char => {
+          const trackRuns = char.runs;
+          if (trackRuns.length === 0) return null;
+
+          const avgScore = trackRuns.reduce((sum, run) => sum + run.score, 0) / trackRuns.length;
+
+          // Count how many times this character ran on each track
+          const allRuns = char.runs;
+          const trackCounts: Record<string, number> = {};
+          allRuns.forEach(run => {
+            trackCounts[run.trackType] = (trackCounts[run.trackType] || 0) + 1;
+          });
+
+          // Find the most played track
+          let mostPlayedTrack = trackType;
+          let maxCount = trackCounts[trackType] || 0;
+          Object.entries(trackCounts).forEach(([track, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              mostPlayedTrack = track;
+            }
+          });
+
+          return {
+            id: char.id,
+            characterName: char.characterName,
+            identifierVersion: char.identifierVersion,
+            averageScore: Math.round(avgScore),
+            totalRuns: trackRuns.length,
+            mostPlayedTrack,
+            isMostPlayedTrack: mostPlayedTrack === trackType,
+          };
+        })
+        .filter(stat => stat !== null && stat.isMostPlayedTrack) // Only characters where this is their most played track
+        .sort((a, b) => b!.averageScore - a!.averageScore) // Sort by average score descending
+        .slice(0, 3); // Top 3
+
+      recommendations[trackType] = characterStats;
+    }
+
+    return recommendations;
+  }
 }

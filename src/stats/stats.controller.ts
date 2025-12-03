@@ -21,4 +21,9 @@ export class StatsController {
   compareCharacters(@Body() body: { characterIds: string[] }, @Request() req) {
     return this.statsService.compareCharacters(body.characterIds, req.user.id);
   }
+
+  @Get('team-recommendations')
+  getTeamRecommendations(@Request() req) {
+    return this.statsService.getTeamRecommendations(req.user.id);
+  }
 }
