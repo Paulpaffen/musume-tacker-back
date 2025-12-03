@@ -8,32 +8,31 @@ export class FriendsController {
   constructor(private readonly friendsService: FriendsService) {}
 
   @Get()
-  async listFriends() {
-    // Stub: return empty list for now
-    return { friends: [] };
+  async listFriends(@Request() req: any) {
+    const friends = await this.friendsService.listFriends(req.user.id);
+    return { friends };
   }
 
   @Get('requests')
-  async listRequests() {
-    // Stub: return empty list for now
-    return { requests: [] };
+  async listRequests(@Request() req: any) {
+    const requests = await this.friendsService.listRequests(req.user.id);
+    return { requests };
   }
 
   @Post('add')
-  async addFriend(@Body() body: { friendCode: string }) {
-    // Stub: accept payload and return pending status
-    return { status: 'PENDING', target: body.friendCode };
+  async addFriend(@Request() req: any, @Body() body: { friendCode: string }) {
+    const friendship = await this.friendsService.addFriend(req.user.id, body.friendCode);
+    return { friendship };
   }
 
   @Patch(':id/accept')
-  async accept(@Param('id') id: string) {
-    // Stub: accept by id
-    return { id, status: 'ACCEPTED' };
+  async accept(@Request() req: any, @Param('id') id: string) {
+    const friendship = await this.friendsService.acceptRequest(req.user.id, id);
+    return { friendship };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    // Stub: remove friendship/request
-    return { id, removed: true };
+  async remove(@Request() req: any, @Param('id') id: string) {
+    return this.friendsService.removeFriend(req.user.id, id);
   }
 }
