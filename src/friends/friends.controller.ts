@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { FriendsService } from './friends.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('friends')
 @UseGuards(JwtAuthGuard)
 export class FriendsController {
-  constructor(private readonly friendsService: FriendsService) {}
+  constructor(
+    private readonly friendsService: FriendsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get()
   async listFriends(@Request() req: any) {
@@ -34,5 +38,23 @@ export class FriendsController {
   @Delete(':id')
   async remove(@Request() req: any, @Param('id') id: string) {
     return this.friendsService.removeFriend(req.user.id, id);
+  }
+
+  @Get('debug')
+  async debugFriends(@Request() req: any) {
+    const userId = req.user?.id;
+    const friendships = await this.prisma.friendship.findMany({
+      where: {
+        OR: [
+          { userId, status: 'ACCEPTED' },
+          { friendId: userId, status: 'ACCEPTED' },
+        ],
+      },
+      include: {
+        user: true,
+        friend: true,
+      },
+    });
+    return { userId, friendships };
   }
 }
