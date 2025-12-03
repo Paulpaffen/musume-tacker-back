@@ -1,12 +1,14 @@
-import { Controller, Get, Patch, Body, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Request, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('profile')
+@UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('me')
-  async me(@Req() req: any) {
+  async me(@Request() req: any) {
     const userId = req.user?.id;
     if (!userId) {
       return { error: 'UNAUTHORIZED' };
@@ -35,7 +37,7 @@ export class ProfileController {
   }
 
   @Patch('settings')
-  async updateSettings(@Req() req: any, @Body() _body: any) {
+  async updateSettings(@Request() req: any, @Body() _body: any) {
     const userId = req.user?.id;
     if (!userId) {
       return { error: 'UNAUTHORIZED' };
