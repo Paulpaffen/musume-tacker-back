@@ -395,29 +395,28 @@ export class OcrService {
       }
 
       // Split line into potential skills using column separators
-      // Common patterns: ") ", ") B ", ") O ", " O ", " B ", " | "
-      // These indicate end of skill1 and start of skill2
+      // First try to split by "|" which is a clear column separator
       let skills: string[] = [];
-
-      // Strategy: Split by patterns that indicate column separation
-      // Pattern: word followed by ") " or " O " or " B " or " | " followed by capital letter
-      const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])|(?<=[a-z])\s*\|\s*(?=[A-Z])/g;
       
-      // Try to split by common separators
-      const parts = line.split(splitPattern);
-      
-      if (parts.length > 1) {
-        // Successfully split, process each part
-        skills = parts;
+      if (line.includes('|')) {
+        // Split by | - it's always a column separator
+        skills = line.split('|').map(s => s.trim()).filter(s => s.length > 0);
       } else {
-        // Fallback: try to detect by parenthesis and capital letters
-        // Pattern: "Skill Name )" followed by "Capital Letter"
-        const manualSplit = line.split(/\s*\)\s*(?=[A-Z])/);
-        if (manualSplit.length > 1) {
-          skills = manualSplit;
+        // Fallback to other patterns: ") ", ") B ", ") O ", " O ", " B "
+        const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])/g;
+        
+        const parts = line.split(splitPattern);
+        
+        if (parts.length > 1) {
+          skills = parts;
         } else {
-          // Last resort: keep as single skill
-          skills = [line];
+          // Last resort: try to detect by parenthesis and capital letters
+          const manualSplit = line.split(/\s*\)\s*(?=[A-Z])/);
+          if (manualSplit.length > 1) {
+            skills = manualSplit;
+          } else {
+            // Keep as single skill
+            skills = [line];
         }
       }
 
