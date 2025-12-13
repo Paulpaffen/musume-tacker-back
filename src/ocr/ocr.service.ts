@@ -188,62 +188,44 @@ export class OcrService {
   }
 
   private parseCharacterStats(text: string) {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    console.log('Parsing stats from text:', text);
+    // Clean up text: replace common OCR errors
+    // Sometimes 'S' is read as '5' or vice versa, but for 3-4 digit stats usually it's okay.
+    // We mainly want to find the sequence of 5 numbers.
+
     const result = {
       speed: 0,
       stamina: 0,
       power: 0,
       guts: 0,
       wit: 0,
-      rank: '',
+      rank: '', // User asked to ignore rank for now
     };
 
-    // Regex for finding stats (e.g. "1089", "534")
-    // We look for lines that might contain these numbers
-    // Often they appear near keywords like "Speed", "Stamina"
+    // Regex to find numbers that look like stats (3 to 4 digits)
+    // We use global flag to find all occurrences
+    const statRegex = /\b(\d{3,4})\b/g;
+    const allNumbers: number[] = [];
 
-    // Simple approach: Look for numbers in the text and try to map them based on order or proximity
-    // Given the layout is usually fixed: Speed, Stamina, Power, Guts, Wit
+    let match;
+    while ((match = statRegex.exec(text)) !== null) {
+      allNumbers.push(parseInt(match[1]));
+    }
 
-    // Let's try to find lines that look like "Speed 1089" or just "1089" after "Speed"
+    console.log('Found potential stat numbers:', allNumbers);
 
-    const statKeywords = ['Speed', 'Stamina', 'Power', 'Guts', 'Wit'];
-
-    // Helper to extract number from a line or next line
-    const findStat = (keyword: string) => {
-      // Find line with keyword
-      const index = lines.findIndex(l => l.toLowerCase().includes(keyword.toLowerCase()));
-      if (index === -1) return 0;
-
-      // Check same line for number
-      const sameLineMatch = lines[index].match(/(\d{3,4})/);
-      if (sameLineMatch) return parseInt(sameLineMatch[1]);
-
-      // Check next line (often the value is below the label)
-      if (index + 1 < lines.length) {
-        const nextLineMatch = lines[index + 1].match(/(\d{3,4})/);
-        if (nextLineMatch) return parseInt(nextLineMatch[1]);
-      }
-
-      return 0;
-    };
-
-    result.speed = findStat('Speed');
-    result.stamina = findStat('Stamina');
-    result.power = findStat('Power');
-    result.guts = findStat('Guts');
-    result.wit = findStat('Wit');
-
-    // Rank parsing (e.g. "UG", "SS", "A+")
-    // Usually appears near the top or as a large standalone text
-    // We look for standard rank patterns
-    const rankRegex = /\b(UG[1-9]?|SS\+|SS|S\+|S|A\+|A|B\+|B|C\+|C)\b/;
-    for (const line of lines) {
-      const match = line.match(rankRegex);
-      if (match) {
-        result.rank = match[1];
-        break;
-      }
+    // We expect at least 5 numbers for the 5 stats.
+    // The order is standard: Speed, Stamina, Power, Guts, Wit.
+    if (allNumbers.length >= 5) {
+      // We take the first 5 numbers found. 
+      // This assumes the image is cropped to the stats area or the stats are the first numbers appearing.
+      result.speed = allNumbers[0];
+      result.stamina = allNumbers[1];
+      result.power = allNumbers[2];
+      result.guts = allNumbers[3];
+      result.wit = allNumbers[4];
+    } else {
+      console.warn('Could not find 5 stats numbers. Found:', allNumbers);
     }
 
     return result;
