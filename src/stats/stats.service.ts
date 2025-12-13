@@ -4,7 +4,7 @@ import { TrackType } from '@prisma/client';
 
 @Injectable()
 export class StatsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getDashboardStats(userId: string, includeArchived: boolean = false) {
     // Get all user's characters
@@ -66,7 +66,8 @@ export class StatsService {
     const bestRuns = [...runs].sort((a, b) => b.score - a.score).slice(0, 10);
 
     // Recent stats by track (last 9 runs per track)
-    const { recentStats, recentBestRuns, recentWorstRuns, recentBestAverages } = await this.getRecentStatsByTrack(characterIds, includeArchived);
+    const { recentStats, recentBestRuns, recentWorstRuns, recentBestAverages } =
+      await this.getRecentStatsByTrack(characterIds, includeArchived);
 
     return {
       overview: {
@@ -189,8 +190,8 @@ export class StatsService {
           characterTrainingId: { in: characterIds },
           trackType: track,
           characterTraining: {
-            isArchived: includeArchived ? undefined : false
-          } as any
+            isArchived: includeArchived ? undefined : false,
+          } as any,
         },
         orderBy: { date: 'desc' },
         take: 9,
@@ -216,17 +217,16 @@ export class StatsService {
     }
 
     // Find top 5 runs from all recent runs
-    const recentBestRuns = allRecentRuns
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+    const recentBestRuns = allRecentRuns.sort((a, b) => b.score - a.score).slice(0, 5);
 
     // Find bottom 5 runs from all recent runs (Underperformers)
-    const recentWorstRuns = allRecentRuns
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 5);
+    const recentWorstRuns = allRecentRuns.sort((a, b) => a.score - b.score).slice(0, 5);
 
     // Calculate best averages from recent runs
-    const charMap = new Map<string, { totalScore: number; count: number; name: string; version: string; id: string }>();
+    const charMap = new Map<
+      string,
+      { totalScore: number; count: number; name: string; version: string; id: string }
+    >();
 
     allRecentRuns.forEach((run) => {
       const charId = run.characterTrainingId;
@@ -332,17 +332,26 @@ export class StatsService {
       averageNormalSkills: parseFloat(
         (runs.reduce((sum, run) => sum + run.normalSkillsCount, 0) / totalRuns).toFixed(2),
       ),
-      recentHistory: runs.slice(0, 10).map((run) => ({
-        date: run.date,
-        score: run.score,
-        finalPlace: run.finalPlace,
-        rareSkills: run.rareSkillsCount,
-        normalSkills: run.normalSkillsCount,
-      })).reverse(),
+      recentHistory: runs
+        .slice(0, 10)
+        .map((run) => ({
+          date: run.date,
+          score: run.score,
+          finalPlace: run.finalPlace,
+          rareSkills: run.rareSkillsCount,
+          normalSkills: run.normalSkillsCount,
+        }))
+        .reverse(),
       impactAnalysis: {
-        scoreVsRareSkills: this.calculateRegression(runs.map(r => ({ x: r.rareSkillsCount, y: r.score }))),
-        scoreVsNormalSkills: this.calculateRegression(runs.map(r => ({ x: r.normalSkillsCount, y: r.score }))),
-        scoreVsFinalPlace: this.calculateRegression(runs.map(r => ({ x: r.finalPlace, y: r.score }))),
+        scoreVsRareSkills: this.calculateRegression(
+          runs.map((r) => ({ x: r.rareSkillsCount, y: r.score })),
+        ),
+        scoreVsNormalSkills: this.calculateRegression(
+          runs.map((r) => ({ x: r.normalSkillsCount, y: r.score })),
+        ),
+        scoreVsFinalPlace: this.calculateRegression(
+          runs.map((r) => ({ x: r.finalPlace, y: r.score })),
+        ),
       },
       trainingData: runs.map((run) => ({
         score: run.score,

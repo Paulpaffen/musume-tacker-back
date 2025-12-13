@@ -5,7 +5,7 @@ import { UpdateRunDto } from './dto/update-run.dto';
 
 @Injectable()
 export class RunService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createRunDto: CreateRunDto) {
     // Verify character belongs to user

@@ -1,4 +1,15 @@
-import { IsString, IsNotEmpty, IsOptional, MinLength, IsInt, Min, Max, IsArray, ValidateNested, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MinLength,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SkillDto {

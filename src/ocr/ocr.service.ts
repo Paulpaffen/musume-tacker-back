@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class OcrService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async processImages(files: Array<Express.Multer.File>, userId: string) {
     console.log('OCR Service: processing', files.length, 'files', 'for user', userId);
@@ -215,8 +215,9 @@ export class OcrService {
       const text = await this.extractTextDigitsOnly(processedBuffer);
       const result = this.parseCharacterStats(text);
 
-      const count = [result.speed, result.stamina, result.power, result.guts, result.wit]
-        .filter(v => v > 0).length;
+      const count = [result.speed, result.stamina, result.power, result.guts, result.wit].filter(
+        (v) => v > 0,
+      ).length;
 
       console.log(`Strategy ${i + 1} found ${count}/5 stats`);
 
@@ -377,8 +378,11 @@ export class OcrService {
     // - Letters followed by ") " or ") B" or ") O" (rarity indicators)
     // - Multiple capital letters in sequence (new skill starting)
     // - Pattern: "skill1 ) skill2" or "skill1 ) B skill2" or "skill1 O skill2"
-    
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     const skipPatterns = [
       /^(?:Lvl?|Level)\s*[:\-]?\s*\d+$/i,
@@ -390,23 +394,27 @@ export class OcrService {
 
     for (const line of lines) {
       // Skip if matches any skip pattern
-      if (skipPatterns.some(pattern => pattern.test(line))) {
+      if (skipPatterns.some((pattern) => pattern.test(line))) {
         continue;
       }
 
       // Split line into potential skills using column separators
       // First try to split by "|" which is a clear column separator
       let skills: string[] = [];
-      
+
       if (line.includes('|')) {
         // Split by | - it's always a column separator
-        skills = line.split('|').map(s => s.trim()).filter(s => s.length > 0);
+        skills = line
+          .split('|')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
       } else {
         // Fallback to other patterns: ") ", ") B ", ") O ", " O ", " B "
-        const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])/g;
-        
+        const splitPattern =
+          /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])/g;
+
         const parts = line.split(splitPattern);
-        
+
         if (parts.length > 1) {
           skills = parts;
         } else {
@@ -417,6 +425,7 @@ export class OcrService {
           } else {
             // Keep as single skill
             skills = [line];
+          }
         }
       }
 
@@ -428,7 +437,7 @@ export class OcrService {
           .replace(/^\s*[BO]\s+/, '') // Remove leading B or O (rarity markers)
           .replace(/\s*[BO]\s*$/, '') // Remove trailing B or O
           .replace(/\[?\d+\]?/g, '') // Remove numbers like [7], 3, [2]
-          .replace(/\s+/g, ' ')   // Normalize whitespace
+          .replace(/\s+/g, ' ') // Normalize whitespace
           .trim();
 
         // Remove common OCR artifacts
@@ -451,7 +460,7 @@ export class OcrService {
     // Deduplicate skills by name (case-insensitive)
     // Keep the first occurrence
     const uniqueSkills = Array.from(
-      new Map(result.skills.map(s => [s.name.toLowerCase(), s])).values()
+      new Map(result.skills.map((s) => [s.name.toLowerCase(), s])).values(),
     );
     result.skills = uniqueSkills;
 

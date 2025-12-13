@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('runs')
 @UseGuards(JwtAuthGuard)
 export class RunController {
-  constructor(private readonly runService: RunService) { }
+  constructor(private readonly runService: RunService) {}
 
   @Post()
   create(@Request() req, @Body() createRunDto: CreateRunDto) {
