@@ -1,15 +1,15 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { StatsService } from './stats.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('stats')
 @UseGuards(JwtAuthGuard)
 export class StatsController {
-  constructor(private readonly statsService: StatsService) {}
+  constructor(private readonly statsService: StatsService) { }
 
   @Get('dashboard')
-  getDashboardStats(@Request() req) {
-    return this.statsService.getDashboardStats(req.user.id);
+  getDashboardStats(@Request() req, @Query('includeArchived') includeArchived?: string) {
+    return this.statsService.getDashboardStats(req.user.id, includeArchived === 'true');
   }
 
   @Get('character/:id')

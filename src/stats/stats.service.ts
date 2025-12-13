@@ -6,12 +6,12 @@ import { TrackType } from '@prisma/client';
 export class StatsService {
   constructor(private prisma: PrismaService) { }
 
-  async getDashboardStats(userId: string) {
+  async getDashboardStats(userId: string, includeArchived: boolean = false) {
     // Get all user's characters
     const characters = await this.prisma.characterTraining.findMany({
       where: {
         userId,
-        isArchived: false,
+        isArchived: includeArchived ? undefined : false,
       } as any,
       select: { id: true },
     });
@@ -57,7 +57,7 @@ export class StatsService {
     const statsByTrack = await this.getStatsByTrack(characterIds);
 
     // Stats by character
-    const statsByCharacter = await this.getStatsByCharacter(characterIds);
+    const statsByCharacter = await this.getStatsByCharacter(characterIds, includeArchived);
 
     // Recent runs
     const recentRuns = runs.slice(0, 10);
@@ -114,11 +114,11 @@ export class StatsService {
     return statsByTrack;
   }
 
-  private async getStatsByCharacter(characterIds: string[]) {
+  private async getStatsByCharacter(characterIds: string[], includeArchived: boolean = false) {
     const characters = await this.prisma.characterTraining.findMany({
       where: {
         id: { in: characterIds },
-        isArchived: false,
+        isArchived: includeArchived ? undefined : false,
       } as any,
       include: {
         runs: true,
