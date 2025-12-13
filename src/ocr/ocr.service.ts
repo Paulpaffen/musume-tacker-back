@@ -395,13 +395,13 @@ export class OcrService {
       }
 
       // Split line into potential skills using column separators
-      // Common patterns: ") ", ") B ", ") O ", " O ", " B "
+      // Common patterns: ") ", ") B ", ") O ", " O ", " B ", " | "
       // These indicate end of skill1 and start of skill2
       let skills: string[] = [];
 
       // Strategy: Split by patterns that indicate column separation
-      // Pattern: word followed by ") " or " O " or " B " followed by capital letter
-      const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])/g;
+      // Pattern: word followed by ") " or " O " or " B " or " | " followed by capital letter
+      const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])|(?<=[a-z])\s*\|\s*(?=[A-Z])/g;
       
       // Try to split by common separators
       const parts = line.split(splitPattern);
