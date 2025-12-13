@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('characters')
 @UseGuards(JwtAuthGuard)
 export class CharacterController {
-  constructor(private readonly characterService: CharacterService) {}
+  constructor(private readonly characterService: CharacterService) { }
 
   @Post()
   create(@Request() req, @Body() createCharacterDto: CreateCharacterDto) {
@@ -31,11 +31,13 @@ export class CharacterController {
     @Query('name') name?: string,
     @Query('minRuns') minRuns?: string,
     @Query('maxRuns') maxRuns?: string,
+    @Query('includeArchived') includeArchived?: string,
   ) {
     return this.characterService.findAll(req.user.id, {
       name,
       minRuns: minRuns ? parseInt(minRuns) : undefined,
       maxRuns: maxRuns ? parseInt(maxRuns) : undefined,
+      includeArchived: includeArchived === 'true',
     });
   }
 

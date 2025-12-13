@@ -70,6 +70,7 @@ model CharacterTraining {
   characterName      String   @map("character_name")
   identifierVersion  String   @map("identifier_version")
   notes              String?
+  isArchived         Boolean  @default(false) @map("is_archived")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 

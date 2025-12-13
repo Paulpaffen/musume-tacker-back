@@ -5,7 +5,7 @@ import { UpdateCharacterDto } from './dto/update-character.dto';
 
 @Injectable()
 export class CharacterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createCharacterDto: CreateCharacterDto) {
     return this.prisma.characterTraining.create({
@@ -22,6 +22,7 @@ export class CharacterService {
       name?: string;
       minRuns?: number;
       maxRuns?: number;
+      includeArchived?: boolean;
     },
   ) {
     const where: any = { userId };
@@ -31,6 +32,10 @@ export class CharacterService {
         contains: filters.name,
         mode: 'insensitive',
       };
+    }
+
+    if (!filters?.includeArchived) {
+      where.isArchived = false;
     }
 
     // Prisma doesn't support filtering by relation count directly in the top-level where clause easily in all versions without 'relationLoadStrategy' or raw queries,
@@ -137,7 +142,10 @@ export class CharacterService {
   async findCandidates(userId: string, detectedName: string) {
     // Get all user characters to perform fuzzy matching in memory
     const userCharacters = await this.prisma.characterTraining.findMany({
-      where: { userId },
+      where: {
+        userId,
+        isArchived: false,
+      } as any,
       select: {
         id: true,
         characterName: true,

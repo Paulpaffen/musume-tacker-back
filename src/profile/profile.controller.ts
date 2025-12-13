@@ -1,4 +1,13 @@
-import { Controller, Get, Patch, Body, Request, UseGuards, Param, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Request,
+  UseGuards,
+  Param,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -172,17 +181,18 @@ export class ProfileController {
       where: { characterTraining: { userId: user.id } },
     });
 
-    const avgScore = runs.length > 0
-      ? Math.round(runs.reduce((sum, r) => sum + r.score, 0) / runs.length)
-      : 0;
+    const avgScore =
+      runs.length > 0 ? Math.round(runs.reduce((sum, r) => sum + r.score, 0) / runs.length) : 0;
 
-    const avgPlace = runs.length > 0
-      ? parseFloat((runs.reduce((sum, r) => sum + r.finalPlace, 0) / runs.length).toFixed(1))
-      : 0;
+    const avgPlace =
+      runs.length > 0
+        ? parseFloat((runs.reduce((sum, r) => sum + r.finalPlace, 0) / runs.length).toFixed(1))
+        : 0;
 
-    const rushedRate = runs.length > 0
-      ? parseFloat(((runs.filter(r => r.rushed).length / runs.length) * 100).toFixed(1))
-      : 0;
+    const rushedRate =
+      runs.length > 0
+        ? parseFloat(((runs.filter((r) => r.rushed).length / runs.length) * 100).toFixed(1))
+        : 0;
 
     return {
       totalRuns,
@@ -294,4 +304,3 @@ export class ProfileController {
     return { bestRuns };
   }
 }
-
