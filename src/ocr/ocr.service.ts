@@ -174,20 +174,80 @@ export class OcrService {
   async processCharacterStatsImage(file: Express.Multer.File) {
     console.log('OCR Service: processing character stats image', file.originalname);
 
-    // Preprocess image specifically for stats reading
-    // We need to enhance the image to make numbers more readable
-    const processedBuffer = await sharp(file.buffer)
-      .grayscale()
-      .normalize() // Auto-adjust contrast
-      .sharpen() // Sharpen edges
-      .threshold(128) // Binarize: convert to pure black and white
-      .resize({ width: 2400, withoutEnlargement: true }) // Larger size for better OCR
-      .toBuffer();
+    // Try multiple preprocessing strategies
+    const strategies = [
+      // Strategy 1: Light preprocessing (works for high quality images)
+      async () => {
+        return await sharp(file.buffer)
+          .grayscale()
+          .normalize()
+          .resize({ width: 2400, withoutEnlargement: true })
+          .toBuffer();
+      },
+      // Strategy 2: Moderate preprocessing
+      async () => {
+        return await sharp(file.buffer)
+          .grayscale()
+          .normalize()
+          .sharpen()
+          .resize({ width: 2400, withoutEnlargement: true })
+          .toBuffer();
+      },
+      // Strategy 3: Aggressive preprocessing (for low quality images)
+      async () => {
+        return await sharp(file.buffer)
+          .grayscale()
+          .normalize()
+          .sharpen()
+          .threshold(140) // Higher threshold to preserve more detail
+          .resize({ width: 2400, withoutEnlargement: true })
+          .toBuffer();
+      },
+    ];
 
-    const text = await this.extractText(processedBuffer);
-    console.log('Extracted Text for Stats:', text);
+    let bestResult = { speed: 0, stamina: 0, power: 0, guts: 0, wit: 0, rank: '' };
+    let bestCount = 0;
 
-    return this.parseCharacterStats(text);
+    // Try each strategy and pick the one that finds the most stats
+    for (let i = 0; i < strategies.length; i++) {
+      console.log(`Trying preprocessing strategy ${i + 1}/${strategies.length}...`);
+      const processedBuffer = await strategies[i]();
+      const text = await this.extractTextDigitsOnly(processedBuffer);
+      const result = this.parseCharacterStats(text);
+
+      const count = [result.speed, result.stamina, result.power, result.guts, result.wit]
+        .filter(v => v > 0).length;
+
+      console.log(`Strategy ${i + 1} found ${count}/5 stats`);
+
+      if (count > bestCount) {
+        bestCount = count;
+        bestResult = result;
+      }
+
+      // If we found all 5, no need to try other strategies
+      if (count === 5) {
+        console.log(`✅ Strategy ${i + 1} succeeded, using this result`);
+        break;
+      }
+    }
+
+    return bestResult;
+  }
+
+  private async extractTextDigitsOnly(buffer: Buffer): Promise<string> {
+    const worker = await Tesseract.createWorker('eng');
+
+    // Configure Tesseract to focus on digits
+    await worker.setParameters({
+      tessedit_char_whitelist: '0123456789', // Only recognize digits
+    });
+
+    const {
+      data: { text },
+    } = await worker.recognize(buffer);
+    await worker.terminate();
+    return text;
   }
 
   private parseCharacterStats(text: string) {
