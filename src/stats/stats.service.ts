@@ -65,6 +65,9 @@ export class StatsService {
     // Best runs
     const bestRuns = [...runs].sort((a, b) => b.score - a.score).slice(0, 10);
 
+    // Recent stats by track (last 9 runs per track)
+    const { recentStats, recentBestRuns } = await this.getRecentStatsByTrack(characterIds, includeArchived);
+
     return {
       overview: {
         totalRuns,
@@ -80,6 +83,8 @@ export class StatsService {
       byCharacter: statsByCharacter,
       recentRuns,
       bestRuns,
+      recentByTrack: recentStats,
+      recentBestRuns,
     };
   }
 
@@ -163,7 +168,55 @@ export class StatsService {
       byCharacter: [],
       recentRuns: [],
       bestRuns: [],
+      recentByTrack: [],
+      recentBestRuns: [],
     };
+  }
+
+  private async getRecentStatsByTrack(characterIds: string[], includeArchived: boolean) {
+    const tracks = Object.values(TrackType);
+    const recentStats = [];
+    let allRecentRuns: any[] = [];
+
+    for (const track of tracks) {
+      // Get last 9 runs for this track
+      const runs = await this.prisma.run.findMany({
+        where: {
+          characterTrainingId: { in: characterIds },
+          trackType: track,
+          characterTraining: {
+            isArchived: includeArchived ? undefined : false
+          } as any
+        },
+        orderBy: { date: 'desc' },
+        take: 9,
+        include: {
+          characterTraining: {
+            select: {
+              characterName: true,
+              identifierVersion: true,
+            },
+          },
+        },
+      });
+
+      if (runs.length > 0) {
+        const avgScore = runs.reduce((sum, run) => sum + run.score, 0) / runs.length;
+        recentStats.push({
+          trackType: track,
+          averageScore: Math.round(avgScore),
+          totalRuns: runs.length,
+        });
+        allRecentRuns = [...allRecentRuns, ...runs];
+      }
+    }
+
+    // Find top 3 runs from all recent runs
+    const recentBestRuns = allRecentRuns
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    return { recentStats, recentBestRuns };
   }
 
   async getCharacterStats(characterId: string, userId: string) {
