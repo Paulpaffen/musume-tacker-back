@@ -334,4 +334,87 @@ export class OcrService {
     console.log('=== OCR STATS PARSING END ===');
     return result;
   }
+
+  async processCharacterSkillsImage(file: Express.Multer.File) {
+    console.log('OCR Service: processing character skills image', file.originalname);
+
+    // Preprocess image for text extraction
+    const processedBuffer = await sharp(file.buffer)
+      .grayscale()
+      .normalize()
+      .resize({ width: 2400, withoutEnlargement: true })
+      .toBuffer();
+
+    const text = await this.extractText(processedBuffer);
+    console.log('Extracted Text for Skills:', text);
+
+    return this.parseCharacterSkills(text);
+  }
+
+  private parseCharacterSkills(text: string) {
+    console.log('=== OCR SKILLS PARSING START ===');
+    console.log('Raw text from Tesseract:', text);
+
+    const result = {
+      uniqueSkillLevel: 0,
+      skills: [] as Array<{ name: string; isRare: boolean }>,
+    };
+
+    // Extract unique skill level (look for "Lvl", "Level" followed by a number)
+    // More robust regex to catch variations
+    const lvlMatch = text.match(/(?:Lvl?|Level)\s*[:\-]?\s*(\d+)/i);
+    if (lvlMatch) {
+      const level = parseInt(lvlMatch[1]);
+      if (level >= 1 && level <= 6) {
+        result.uniqueSkillLevel = level;
+        console.log('✅ Found unique skill level:', level);
+      }
+    }
+
+    // Extract skill names
+    // Skills are typically on separate lines or separated by specific patterns
+    // We'll extract all text lines and filter out numbers, "Lvl", and common UI text
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    const skipPatterns = [
+      /^(?:Lvl?|Level)\s*[:\-]?\s*\d+$/i,
+      /^\d+$/,
+      /^[0-9\s]+$/,
+      /^[©®™]+$/,
+    ];
+
+    for (const line of lines) {
+      // Skip if matches any skip pattern
+      if (skipPatterns.some(pattern => pattern.test(line))) {
+        continue;
+      }
+
+      // Clean up the line
+      let skillName = line
+        .replace(/[©®™]/g, '') // Remove special characters
+        .replace(/\s+/g, ' ')   // Normalize whitespace
+        .trim();
+
+      // Only add if it looks like a skill name (has letters and reasonable length)
+      if (skillName.length >= 3 && /[a-zA-Z]/.test(skillName)) {
+        // For now, we can't detect if it's rare or not (no color detection)
+        // User will classify manually
+        result.skills.push({
+          name: skillName,
+          isRare: false, // Default to false, user will change
+        });
+      }
+    }
+
+    // Deduplicate skills by name (case-insensitive)
+    // Keep the first occurrence
+    const uniqueSkills = Array.from(
+      new Map(result.skills.map(s => [s.name.toLowerCase(), s])).values()
+    );
+    result.skills = uniqueSkills;
+
+    console.log('✅ Found skills (after deduplication):', result.skills);
+    console.log('=== OCR SKILLS PARSING END ===');
+    return result;
+  }
 }

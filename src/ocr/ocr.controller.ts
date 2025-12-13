@@ -38,4 +38,13 @@ export class OcrController {
     }
     return this.ocrService.processCharacterStatsImage(files[0]);
   }
+
+  @Post('scan-skills')
+  @UseInterceptors(FilesInterceptor('file'))
+  async scanSkills(@UploadedFiles() files: Array<Express.Multer.File>) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No file uploaded');
+    }
+    return this.ocrService.processCharacterSkillsImage(files[0]);
+  }
 }

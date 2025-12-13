@@ -1,8 +1,10 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateCharacterDto } from './create-character.dto';
+import { CreateCharacterDto, SkillDto } from './create-character.dto';
 
-import { IsBoolean, IsOptional, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsNumber, IsString, IsInt, Min, Max, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export { SkillDto };
 
 export class UpdateCharacterDto extends PartialType(CreateCharacterDto) {
     @IsBoolean()
@@ -37,4 +39,17 @@ export class UpdateCharacterDto extends PartialType(CreateCharacterDto) {
     @IsOptional()
     @IsString()
     rank?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    @Max(6)
+    @Type(() => Number)
+    uniqueSkillLevel?: number;
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => SkillDto)
+    skills?: SkillDto[];
 }

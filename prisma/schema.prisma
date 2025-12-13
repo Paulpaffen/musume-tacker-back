@@ -82,6 +82,10 @@ model CharacterTraining {
   wit                Int?     @default(0)
   rank               String?  // e.g. "A+", "SS"
 
+  // Skills
+  uniqueSkillLevel   Int?     @map("unique_skill_level") // 1-6
+  skills             Json?    // Array of {name: string, isRare: boolean}
+
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   runs Run[]
 
