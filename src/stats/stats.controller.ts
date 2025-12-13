@@ -26,4 +26,9 @@ export class StatsController {
   getTeamRecommendations(@Request() req) {
     return this.statsService.getTeamRecommendations(req.user.id);
   }
+
+  @Get('training-data')
+  getTrainingData(@Request() req, @Query('trackType') trackType?: string) {
+    return this.statsService.getTrainingData(req.user.id, trackType);
+  }
 }

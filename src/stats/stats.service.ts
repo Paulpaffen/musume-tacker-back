@@ -478,4 +478,36 @@ export class StatsService {
 
     return recommendations;
   }
+
+  async getTrainingData(userId: string, trackType?: string) {
+    const runs = await this.prisma.run.findMany({
+      where: {
+        characterTraining: {
+          userId,
+        },
+        ...(trackType && trackType !== 'ALL' ? { trackType: trackType as any } : {}),
+      },
+      select: {
+        score: true,
+        finalPlace: true,
+        rareSkillsCount: true,
+        normalSkillsCount: true,
+        trackType: true,
+        rushed: true,
+        goodPositioning: true,
+        uniqueSkillActivated: true,
+      },
+    });
+
+    return runs.map((run) => ({
+      score: run.score,
+      finalPlace: run.finalPlace,
+      rareSkills: run.rareSkillsCount,
+      normalSkills: run.normalSkillsCount,
+      trackType: run.trackType,
+      rushed: run.rushed,
+      goodPositioning: run.goodPositioning,
+      uniqueSkillActivated: run.uniqueSkillActivated,
+    }));
+  }
 }
