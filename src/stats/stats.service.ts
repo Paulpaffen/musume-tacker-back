@@ -286,6 +286,7 @@ export class StatsService {
         goodPositioningRate: 0,
         averageRareSkills: 0,
         averageNormalSkills: 0,
+        recentHistory: [],
       };
     }
 
@@ -330,6 +331,12 @@ export class StatsService {
       averageNormalSkills: parseFloat(
         (runs.reduce((sum, run) => sum + run.normalSkillsCount, 0) / totalRuns).toFixed(2),
       ),
+      recentHistory: runs.slice(0, 10).map((run) => ({
+        date: run.date,
+        score: run.score,
+        rareSkills: run.rareSkillsCount,
+        normalSkills: run.normalSkillsCount,
+      })).reverse(),
     };
   }
 
