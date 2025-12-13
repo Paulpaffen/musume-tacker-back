@@ -287,6 +287,7 @@ export class StatsService {
         averageRareSkills: 0,
         averageNormalSkills: 0,
         recentHistory: [],
+        impactAnalysis: null,
       };
     }
 
@@ -338,6 +339,48 @@ export class StatsService {
         rareSkills: run.rareSkillsCount,
         normalSkills: run.normalSkillsCount,
       })).reverse(),
+      impactAnalysis: {
+        scoreVsRareSkills: this.calculateRegression(runs.map(r => ({ x: r.rareSkillsCount, y: r.score }))),
+        scoreVsNormalSkills: this.calculateRegression(runs.map(r => ({ x: r.normalSkillsCount, y: r.score }))),
+        scoreVsFinalPlace: this.calculateRegression(runs.map(r => ({ x: r.finalPlace, y: r.score }))),
+      },
+    };
+  }
+
+  private calculateRegression(data: { x: number; y: number }[]) {
+    const n = data.length;
+    if (n < 2) return null;
+
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumX2 = 0;
+    let sumY2 = 0;
+
+    for (const point of data) {
+      sumX += point.x;
+      sumY += point.y;
+      sumXY += point.x * point.y;
+      sumX2 += point.x * point.x;
+      sumY2 += point.y * point.y;
+    }
+
+    const denominator = n * sumX2 - sumX * sumX;
+    if (denominator === 0) return null;
+
+    const slope = (n * sumXY - sumX * sumY) / denominator;
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Calculate correlation coefficient (r)
+    const numeratorR = n * sumXY - sumX * sumY;
+    const denominatorR = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    const correlation = denominatorR === 0 ? 0 : numeratorR / denominatorR;
+
+    return {
+      slope,
+      intercept,
+      correlation,
+      dataPoints: data,
     };
   }
 
