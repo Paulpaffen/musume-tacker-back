@@ -334,6 +334,7 @@ export class StatsService {
       recentHistory: runs.slice(0, 10).map((run) => ({
         date: run.date,
         score: run.score,
+        finalPlace: run.finalPlace,
         rareSkills: run.rareSkillsCount,
         normalSkills: run.normalSkillsCount,
       })).reverse(),
