@@ -74,6 +74,14 @@ model CharacterTraining {
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
+  // Stats
+  speed              Int?     @default(0)
+  stamina            Int?     @default(0)
+  power              Int?     @default(0)
+  guts               Int?     @default(0)
+  wit                Int?     @default(0)
+  rank               String?  // e.g. "A+", "SS"
+
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   runs Run[]
 

@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class OcrService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async processImages(files: Array<Express.Multer.File>, userId: string) {
     console.log('OCR Service: processing', files.length, 'files', 'for user', userId);
@@ -169,5 +169,83 @@ export class OcrService {
       candidates,
       bestMatchId: candidates.length > 0 ? candidates[0].id : null,
     };
+  }
+
+  async processCharacterStatsImage(file: Express.Multer.File) {
+    console.log('OCR Service: processing character stats image', file.originalname);
+
+    // Preprocess image specifically for stats reading
+    // We might need less aggressive thresholding or different settings
+    const processedBuffer = await sharp(file.buffer)
+      .grayscale()
+      .resize({ width: 2000, withoutEnlargement: true })
+      .toBuffer();
+
+    const text = await this.extractText(processedBuffer);
+    console.log('Extracted Text for Stats:', text);
+
+    return this.parseCharacterStats(text);
+  }
+
+  private parseCharacterStats(text: string) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const result = {
+      speed: 0,
+      stamina: 0,
+      power: 0,
+      guts: 0,
+      wit: 0,
+      rank: '',
+    };
+
+    // Regex for finding stats (e.g. "1089", "534")
+    // We look for lines that might contain these numbers
+    // Often they appear near keywords like "Speed", "Stamina"
+
+    // Simple approach: Look for numbers in the text and try to map them based on order or proximity
+    // Given the layout is usually fixed: Speed, Stamina, Power, Guts, Wit
+
+    // Let's try to find lines that look like "Speed 1089" or just "1089" after "Speed"
+
+    const statKeywords = ['Speed', 'Stamina', 'Power', 'Guts', 'Wit'];
+
+    // Helper to extract number from a line or next line
+    const findStat = (keyword: string) => {
+      // Find line with keyword
+      const index = lines.findIndex(l => l.toLowerCase().includes(keyword.toLowerCase()));
+      if (index === -1) return 0;
+
+      // Check same line for number
+      const sameLineMatch = lines[index].match(/(\d{3,4})/);
+      if (sameLineMatch) return parseInt(sameLineMatch[1]);
+
+      // Check next line (often the value is below the label)
+      if (index + 1 < lines.length) {
+        const nextLineMatch = lines[index + 1].match(/(\d{3,4})/);
+        if (nextLineMatch) return parseInt(nextLineMatch[1]);
+      }
+
+      return 0;
+    };
+
+    result.speed = findStat('Speed');
+    result.stamina = findStat('Stamina');
+    result.power = findStat('Power');
+    result.guts = findStat('Guts');
+    result.wit = findStat('Wit');
+
+    // Rank parsing (e.g. "UG", "SS", "A+")
+    // Usually appears near the top or as a large standalone text
+    // We look for standard rank patterns
+    const rankRegex = /\b(UG[1-9]?|SS\+|SS|S\+|S|A\+|A|B\+|B|C\+|C)\b/;
+    for (const line of lines) {
+      const match = line.match(rankRegex);
+      if (match) {
+        result.rank = match[1];
+        break;
+      }
+    }
+
+    return result;
   }
 }

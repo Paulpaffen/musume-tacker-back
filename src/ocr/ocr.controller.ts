@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('ocr')
 @UseGuards(JwtAuthGuard)
 export class OcrController {
-  constructor(private readonly ocrService: OcrService) {}
+  constructor(private readonly ocrService: OcrService) { }
 
   @Post('scan')
   @UseInterceptors(FilesInterceptor('files'))
@@ -24,5 +24,18 @@ export class OcrController {
       throw new BadRequestException('No files uploaded');
     }
     return this.ocrService.processImages(files, req.user.id);
+  }
+
+  @Post('scan-stats')
+  @UseInterceptors(FilesInterceptor('file'))
+  async scanStats(@UploadedFiles() files: Array<Express.Multer.File>) {
+    // FilesInterceptor returns an array even for single file field if configured, 
+    // but usually FileInterceptor is for single. 
+    // Let's stick to FilesInterceptor to be safe or use files[0]
+
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No file uploaded');
+    }
+    return this.ocrService.processCharacterStatsImage(files[0]);
   }
 }

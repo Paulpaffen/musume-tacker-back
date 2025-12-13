@@ -14,4 +14,25 @@ export class CreateCharacterDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsOptional()
+  speed?: number;
+
+  @IsOptional()
+  stamina?: number;
+
+  @IsOptional()
+  power?: number;
+
+  @IsOptional()
+  guts?: number;
+
+  @IsOptional()
+  wit?: number;
+
+  @IsOptional()
+  rank?: string;
+
+  @IsOptional()
+  createdAt?: string;
 }
