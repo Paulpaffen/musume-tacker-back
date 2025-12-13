@@ -175,10 +175,13 @@ export class OcrService {
     console.log('OCR Service: processing character stats image', file.originalname);
 
     // Preprocess image specifically for stats reading
-    // We might need less aggressive thresholding or different settings
+    // We need to enhance the image to make numbers more readable
     const processedBuffer = await sharp(file.buffer)
       .grayscale()
-      .resize({ width: 2000, withoutEnlargement: true })
+      .normalize() // Auto-adjust contrast
+      .sharpen() // Sharpen edges
+      .threshold(128) // Binarize: convert to pure black and white
+      .resize({ width: 2400, withoutEnlargement: true }) // Larger size for better OCR
       .toBuffer();
 
     const text = await this.extractText(processedBuffer);
@@ -188,10 +191,9 @@ export class OcrService {
   }
 
   private parseCharacterStats(text: string) {
-    console.log('Parsing stats from text:', text);
-    // Clean up text: replace common OCR errors
-    // Sometimes 'S' is read as '5' or vice versa, but for 3-4 digit stats usually it's okay.
-    // We mainly want to find the sequence of 5 numbers.
+    console.log('=== OCR STATS PARSING START ===');
+    console.log('Raw text from Tesseract:', text);
+    console.log('Text length:', text.length);
 
     const result = {
       speed: 0,
@@ -206,10 +208,12 @@ export class OcrService {
     // We use global flag to find all occurrences
     const statRegex = /\b(\d{3,4})\b/g;
     const allNumbers: number[] = [];
+    const allNumbersBeforeFilter: number[] = [];
 
     let match;
     while ((match = statRegex.exec(text)) !== null) {
       const num = parseInt(match[1]);
+      allNumbersBeforeFilter.push(num);
       // Filter: Stats are typically between 100 and 1500
       // This helps filter out noise like "55" from "SS" rank icons
       if (num >= 100 && num <= 1500) {
@@ -217,7 +221,8 @@ export class OcrService {
       }
     }
 
-    console.log('Found potential stat numbers:', allNumbers);
+    console.log('Numbers found (before filter):', allNumbersBeforeFilter);
+    console.log('Numbers found (after filter 100-1500):', allNumbers);
 
     // We expect at least 5 numbers for the 5 stats.
     // The order is standard: Speed, Stamina, Power, Guts, Wit.
@@ -229,10 +234,13 @@ export class OcrService {
       result.power = allNumbers[2];
       result.guts = allNumbers[3];
       result.wit = allNumbers[4];
+      console.log('✅ Successfully parsed 5 stats:', result);
     } else {
-      console.warn('Could not find 5 stats numbers. Found:', allNumbers);
+      console.warn('❌ Could not find 5 stats numbers. Found only:', allNumbers.length);
+      console.warn('This usually means OCR failed to read the numbers from the image');
     }
 
+    console.log('=== OCR STATS PARSING END ===');
     return result;
   }
 }
