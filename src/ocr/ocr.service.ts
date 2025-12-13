@@ -261,34 +261,65 @@ export class OcrService {
       power: 0,
       guts: 0,
       wit: 0,
-      rank: '', // User asked to ignore rank for now
+      rank: '',
     };
 
-    // Regex to find numbers that look like stats (3 to 4 digits)
-    // We use global flag to find all occurrences
-    const statRegex = /\b(\d{3,4})\b/g;
-    const allNumbers: number[] = [];
-    const allNumbersBeforeFilter: number[] = [];
+    // Remove all non-digit characters
+    const digitsOnly = text.replace(/\D/g, '');
+    console.log('Digits only:', digitsOnly);
 
-    let match;
-    while ((match = statRegex.exec(text)) !== null) {
-      const num = parseInt(match[1]);
-      allNumbersBeforeFilter.push(num);
-      // Filter: Stats are typically between 100 and 1500
-      // This helps filter out noise like "55" from "SS" rank icons
-      if (num >= 100 && num <= 1500) {
-        allNumbers.push(num);
+    // Try to parse as concatenated numbers (e.g. "10895349154904812")
+    // We expect 5 numbers of 3-4 digits each
+    const allNumbers: number[] = [];
+
+    // Strategy: Try to split the digit string into 5 groups
+    // Each stat is typically 3-4 digits (100-1500 range)
+    if (digitsOnly.length >= 15 && digitsOnly.length <= 20) {
+      // Most likely we have 5 numbers concatenated
+      // Try to intelligently split them
+
+      // Approach: Scan through and try to identify valid 3-4 digit numbers
+      let remaining = digitsOnly;
+      while (remaining.length > 0 && allNumbers.length < 5) {
+        // Try 4 digits first
+        if (remaining.length >= 4) {
+          const fourDigit = parseInt(remaining.substring(0, 4));
+          if (fourDigit >= 100 && fourDigit <= 1500) {
+            allNumbers.push(fourDigit);
+            remaining = remaining.substring(4);
+            continue;
+          }
+        }
+
+        // Try 3 digits
+        if (remaining.length >= 3) {
+          const threeDigit = parseInt(remaining.substring(0, 3));
+          if (threeDigit >= 100 && threeDigit <= 1500) {
+            allNumbers.push(threeDigit);
+            remaining = remaining.substring(3);
+            continue;
+          }
+        }
+
+        // If neither worked, skip this digit (noise)
+        remaining = remaining.substring(1);
+      }
+    } else {
+      // Fallback: Try to find individual numbers with word boundaries
+      const statRegex = /\b(\d{3,4})\b/g;
+      let match;
+      while ((match = statRegex.exec(text)) !== null) {
+        const num = parseInt(match[1]);
+        if (num >= 100 && num <= 1500) {
+          allNumbers.push(num);
+        }
       }
     }
 
-    console.log('Numbers found (before filter):', allNumbersBeforeFilter);
-    console.log('Numbers found (after filter 100-1500):', allNumbers);
+    console.log('Numbers found:', allNumbers);
 
-    // We expect at least 5 numbers for the 5 stats.
-    // The order is standard: Speed, Stamina, Power, Guts, Wit.
+    // We expect exactly 5 numbers for the 5 stats
     if (allNumbers.length >= 5) {
-      // We take the first 5 numbers found. 
-      // This assumes the image is cropped to the stats area or the stats are the first numbers appearing.
       result.speed = allNumbers[0];
       result.stamina = allNumbers[1];
       result.power = allNumbers[2];
