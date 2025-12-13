@@ -8,10 +8,12 @@ export class CharacterService {
   constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createCharacterDto: CreateCharacterDto) {
+    const { skills, ...rest } = createCharacterDto;
     return this.prisma.characterTraining.create({
       data: {
-        ...createCharacterDto,
+        ...rest,
         userId,
+        skills: skills ? (skills as any) : undefined, // Convert DTO to plain JSON
       },
     });
   }
@@ -113,9 +115,13 @@ export class CharacterService {
       throw new ForbiddenException('Access denied');
     }
 
+    const { skills, ...rest } = updateCharacterDto;
     return this.prisma.characterTraining.update({
       where: { id },
-      data: updateCharacterDto,
+      data: {
+        ...rest,
+        skills: skills ? (skills as any) : undefined, // Convert DTO to plain JSON
+      },
     });
   }
 
