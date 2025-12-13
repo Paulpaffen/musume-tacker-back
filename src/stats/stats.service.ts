@@ -344,6 +344,12 @@ export class StatsService {
         scoreVsNormalSkills: this.calculateRegression(runs.map(r => ({ x: r.normalSkillsCount, y: r.score }))),
         scoreVsFinalPlace: this.calculateRegression(runs.map(r => ({ x: r.finalPlace, y: r.score }))),
       },
+      trainingData: runs.map((run) => ({
+        score: run.score,
+        finalPlace: run.finalPlace,
+        rareSkills: run.rareSkillsCount,
+        normalSkills: run.normalSkillsCount,
+      })),
     };
   }
 
