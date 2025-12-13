@@ -209,7 +209,12 @@ export class OcrService {
 
     let match;
     while ((match = statRegex.exec(text)) !== null) {
-      allNumbers.push(parseInt(match[1]));
+      const num = parseInt(match[1]);
+      // Filter: Stats are typically between 100 and 1500
+      // This helps filter out noise like "55" from "SS" rank icons
+      if (num >= 100 && num <= 1500) {
+        allNumbers.push(num);
+      }
     }
 
     console.log('Found potential stat numbers:', allNumbers);
