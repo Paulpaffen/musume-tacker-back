@@ -66,7 +66,7 @@ export class StatsService {
     const bestRuns = [...runs].sort((a, b) => b.score - a.score).slice(0, 10);
 
     // Recent stats by track (last 9 runs per track)
-    const { recentStats, recentBestRuns } = await this.getRecentStatsByTrack(characterIds, includeArchived);
+    const { recentStats, recentBestRuns, recentWorstRuns, recentBestAverages } = await this.getRecentStatsByTrack(characterIds, includeArchived);
 
     return {
       overview: {
@@ -85,6 +85,8 @@ export class StatsService {
       bestRuns,
       recentByTrack: recentStats,
       recentBestRuns,
+      recentWorstRuns,
+      recentBestAverages,
     };
   }
 
@@ -170,6 +172,8 @@ export class StatsService {
       bestRuns: [],
       recentByTrack: [],
       recentBestRuns: [],
+      recentWorstRuns: [],
+      recentBestAverages: [],
     };
   }
 
@@ -211,12 +215,47 @@ export class StatsService {
       }
     }
 
-    // Find top 3 runs from all recent runs
+    // Find top 5 runs from all recent runs
     const recentBestRuns = allRecentRuns
       .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+      .slice(0, 5);
 
-    return { recentStats, recentBestRuns };
+    // Find bottom 5 runs from all recent runs (Underperformers)
+    const recentWorstRuns = allRecentRuns
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 5);
+
+    // Calculate best averages from recent runs
+    const charMap = new Map<string, { totalScore: number; count: number; name: string; version: string; id: string }>();
+
+    allRecentRuns.forEach((run) => {
+      const charId = run.characterTrainingId;
+      if (!charMap.has(charId)) {
+        charMap.set(charId, {
+          totalScore: 0,
+          count: 0,
+          name: run.characterTraining.characterName,
+          version: run.characterTraining.identifierVersion,
+          id: charId,
+        });
+      }
+      const charData = charMap.get(charId);
+      charData.totalScore += run.score;
+      charData.count += 1;
+    });
+
+    const recentBestAverages = Array.from(charMap.values())
+      .map((char) => ({
+        characterId: char.id,
+        characterName: char.name,
+        identifierVersion: char.version,
+        averageScore: Math.round(char.totalScore / char.count),
+        totalRuns: char.count,
+      }))
+      .sort((a, b) => b.averageScore - a.averageScore)
+      .slice(0, 5);
+
+    return { recentStats, recentBestRuns, recentWorstRuns, recentBestAverages };
   }
 
   async getCharacterStats(characterId: string, userId: string) {
