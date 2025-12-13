@@ -372,8 +372,12 @@ export class OcrService {
     }
 
     // Extract skill names
-    // Skills are typically on separate lines or separated by specific patterns
-    // We'll extract all text lines and filter out numbers, "Lvl", and common UI text
+    // The image has 2 columns, OCR reads them as one line with skills separated
+    // Pattern indicators of column separation:
+    // - Letters followed by ") " or ") B" or ") O" (rarity indicators)
+    // - Multiple capital letters in sequence (new skill starting)
+    // - Pattern: "skill1 ) skill2" or "skill1 ) B skill2" or "skill1 O skill2"
+    
     const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
     const skipPatterns = [
@@ -381,6 +385,7 @@ export class OcrService {
       /^\d+$/,
       /^[0-9\s]+$/,
       /^[©®™]+$/,
+      /^Venus\s*x/i, // Skip character name line
     ];
 
     for (const line of lines) {
@@ -389,20 +394,58 @@ export class OcrService {
         continue;
       }
 
-      // Clean up the line
-      let skillName = line
-        .replace(/[©®™]/g, '') // Remove special characters
-        .replace(/\s+/g, ' ')   // Normalize whitespace
-        .trim();
+      // Split line into potential skills using column separators
+      // Common patterns: ") ", ") B ", ") O ", " O ", " B "
+      // These indicate end of skill1 and start of skill2
+      let skills: string[] = [];
 
-      // Only add if it looks like a skill name (has letters and reasonable length)
-      if (skillName.length >= 3 && /[a-zA-Z]/.test(skillName)) {
-        // For now, we can't detect if it's rare or not (no color detection)
-        // User will classify manually
-        result.skills.push({
-          name: skillName,
-          isRare: false, // Default to false, user will change
-        });
+      // Strategy: Split by patterns that indicate column separation
+      // Pattern: word followed by ") " or " O " or " B " followed by capital letter
+      const splitPattern = /\s*\)\s*(?=[A-Z])|(?<=[a-z])\s+(?=[BO]\s+[A-Z])|(?<=[a-z])\s+O\s+(?=[A-Z])|(?<=[a-z])\s+B\s+(?=[A-Z])/g;
+      
+      // Try to split by common separators
+      const parts = line.split(splitPattern);
+      
+      if (parts.length > 1) {
+        // Successfully split, process each part
+        skills = parts;
+      } else {
+        // Fallback: try to detect by parenthesis and capital letters
+        // Pattern: "Skill Name )" followed by "Capital Letter"
+        const manualSplit = line.split(/\s*\)\s*(?=[A-Z])/);
+        if (manualSplit.length > 1) {
+          skills = manualSplit;
+        } else {
+          // Last resort: keep as single skill
+          skills = [line];
+        }
+      }
+
+      for (let skillRaw of skills) {
+        // Clean up the skill name
+        let skillName = skillRaw
+          .replace(/[©®™]/g, '') // Remove special characters
+          .replace(/\s*\)\s*$/, '') // Remove trailing )
+          .replace(/^\s*[BO]\s+/, '') // Remove leading B or O (rarity markers)
+          .replace(/\s*[BO]\s*$/, '') // Remove trailing B or O
+          .replace(/\[?\d+\]?/g, '') // Remove numbers like [7], 3, [2]
+          .replace(/\s+/g, ' ')   // Normalize whitespace
+          .trim();
+
+        // Remove common OCR artifacts
+        skillName = skillName
+          .replace(/\s*[|j]\s*$/i, '') // Remove trailing | or j
+          .replace(/^[|j]\s*/i, '') // Remove leading | or j
+          .replace(/\s*©\s*$/i, '') // Remove trailing ©
+          .trim();
+
+        // Only add if it looks like a skill name (has letters and reasonable length)
+        if (skillName.length >= 3 && /[a-zA-Z]/.test(skillName)) {
+          result.skills.push({
+            name: skillName,
+            isRare: false, // Default to false, user will change
+          });
+        }
       }
     }
 
