@@ -4,12 +4,15 @@ import { TrackType } from '@prisma/client';
 
 @Injectable()
 export class StatsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getDashboardStats(userId: string) {
     // Get all user's characters
     const characters = await this.prisma.characterTraining.findMany({
-      where: { userId },
+      where: {
+        userId,
+        isArchived: false,
+      } as any,
       select: { id: true },
     });
 
@@ -113,7 +116,10 @@ export class StatsService {
 
   private async getStatsByCharacter(characterIds: string[]) {
     const characters = await this.prisma.characterTraining.findMany({
-      where: { id: { in: characterIds } },
+      where: {
+        id: { in: characterIds },
+        isArchived: false,
+      } as any,
       include: {
         runs: true,
       },

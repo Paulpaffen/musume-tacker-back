@@ -5,7 +5,7 @@ import { UpdateRunDto } from './dto/update-run.dto';
 
 @Injectable()
 export class RunService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createRunDto: CreateRunDto) {
     // Verify character belongs to user
@@ -53,6 +53,7 @@ export class RunService {
       rushed?: boolean;
       goodPositioning?: boolean;
       uniqueSkillActivated?: boolean;
+      includeArchived?: boolean;
     },
   ) {
     // Build where clause
@@ -75,9 +76,12 @@ export class RunService {
 
       where.characterTrainingId = filters.characterTrainingId;
     } else {
-      // Get all runs for all user's characters
+      // Get all runs for all user's characters (excluding archived by default)
       const userCharacters = await this.prisma.characterTraining.findMany({
-        where: { userId },
+        where: {
+          userId,
+          isArchived: filters.includeArchived ? undefined : false,
+        } as any,
         select: { id: true },
       });
 

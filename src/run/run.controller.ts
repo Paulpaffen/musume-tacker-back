@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('runs')
 @UseGuards(JwtAuthGuard)
 export class RunController {
-  constructor(private readonly runService: RunService) {}
+  constructor(private readonly runService: RunService) { }
 
   @Post()
   create(@Request() req, @Body() createRunDto: CreateRunDto) {
@@ -41,6 +41,7 @@ export class RunController {
     @Query('rushed') rushed?: string,
     @Query('goodPositioning') goodPositioning?: string,
     @Query('uniqueSkillActivated') uniqueSkillActivated?: string,
+    @Query('includeArchived') includeArchived?: string,
   ) {
     return this.runService.findAll(req.user.id, {
       characterTrainingId,
@@ -62,6 +63,7 @@ export class RunController {
           : uniqueSkillActivated === 'false'
             ? false
             : undefined,
+      includeArchived: includeArchived === 'true',
     });
   }
 
