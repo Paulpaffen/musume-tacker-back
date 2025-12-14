@@ -92,6 +92,17 @@ model CharacterTraining {
   @@map("character_trainings")
 }
 
+model Skill {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isRare    Boolean  @default(false) @map("is_rare")
+  timesUsed Int      @default(0) @map("times_used")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("skills")
+}
+
 enum TrackType {
   TURF_SHORT     // Césped Corto
   TURF_MILE      // Césped Milla

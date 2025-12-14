@@ -423,8 +423,16 @@ export class OcrService {
           if (manualSplit.length > 1) {
             skills = manualSplit;
           } else {
-            // Keep as single skill
-            skills = [line];
+            // Final fallback: detect concatenated skills (e.g., "Professor of Curvature Corner Recovery")
+            // Split when a lowercase letter is followed directly by an uppercase letter after a space
+            // Pattern: "word " followed by capital letter (typical skill name start)
+            const concatenatedSplit = line.split(/(?<=[a-z])\s+(?=[A-Z][a-z])/);
+            if (concatenatedSplit.length > 1) {
+              skills = concatenatedSplit;
+            } else {
+              // Keep as single skill
+              skills = [line];
+            }
           }
         }
       }

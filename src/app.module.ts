@@ -9,6 +9,7 @@ import { StatsModule } from './stats/stats.module';
 import { OcrModule } from './ocr/ocr.module';
 import { FriendsModule } from './friends/friends.module';
 import { ProfileModule } from './profile/profile.module';
+import { SkillsModule } from './skills/skills.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProfileModule } from './profile/profile.module';
     OcrModule,
     FriendsModule,
     ProfileModule,
+    SkillsModule,
   ],
   controllers: [HealthController],
 })
