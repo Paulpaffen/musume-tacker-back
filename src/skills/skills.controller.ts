@@ -30,8 +30,8 @@ export class SkillsController {
   }
 
   @Get('search')
-  searchSimilar(@Query('q') query: string, @Query('limit') limit?: number) {
-    return this.skillsService.searchSimilar(query, limit ? parseInt(limit as string) : 10);
+  searchSimilar(@Query('q') query: string, @Query('limit') limit?: string) {
+    return this.skillsService.searchSimilar(query, limit ? parseInt(limit) : 10);
   }
 
   @Post('seed')
