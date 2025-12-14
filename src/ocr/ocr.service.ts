@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import * as Tesseract from 'tesseract.js';
 import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
+import { SkillsService } from '../skills/skills.service';
 
 @Injectable()
 export class OcrService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private skillsService: SkillsService,
+  ) {}
 
   async processImages(files: Array<Express.Multer.File>, userId: string) {
     console.log('OCR Service: processing', files.length, 'files', 'for user', userId);
@@ -349,10 +353,122 @@ export class OcrService {
     const text = await this.extractText(processedBuffer);
     console.log('Extracted Text for Skills:', text);
 
-    return this.parseCharacterSkills(text);
+    const parsedSkills = await this.parseCharacterSkills(text);
+
+    // Match detected skills with database
+    const matchedSkills = await this.matchSkillsWithDatabase(parsedSkills.skills);
+
+    return {
+      uniqueSkillLevel: parsedSkills.uniqueSkillLevel,
+      skills: matchedSkills,
+    };
   }
 
-  private parseCharacterSkills(text: string) {
+  private async matchSkillsWithDatabase(
+    detectedSkills: Array<{ name: string; isRare: boolean }>,
+  ) {
+    const allSkills = await this.prisma.skill.findMany();
+    const matchedSkills: Array<{ name: string; isRare: boolean }> = [];
+
+    for (const detected of detectedSkills) {
+      // Try exact match first
+      let matchedSkill = allSkills.find(
+        (s) => s.name.toLowerCase() === detected.name.toLowerCase(),
+      );
+
+      // Try fuzzy match if no exact match
+      if (!matchedSkill) {
+        matchedSkill = this.findBestSkillMatch(detected.name, allSkills);
+      }
+
+      if (matchedSkill) {
+        // Use database skill data
+        matchedSkills.push({
+          name: matchedSkill.name, // Use corrected name from DB
+          isRare: matchedSkill.isRare, // Use isRare from DB
+        });
+        console.log(`✅ Matched: "${detected.name}" -> "${matchedSkill.name}" (rare: ${matchedSkill.isRare})`);
+      } else {
+        // Keep original detected skill
+        matchedSkills.push(detected);
+        console.log(`⚠️ No match for: "${detected.name}" - keeping original`);
+      }
+    }
+
+    return matchedSkills;
+  }
+
+  private findBestSkillMatch(detectedName: string, dbSkills: any[]): any | null {
+    const detectedLower = detectedName.toLowerCase();
+    let bestMatch: any = null;
+    let bestScore = 0;
+
+    for (const skill of dbSkills) {
+      const skillLower = skill.name.toLowerCase();
+
+      // Calculate simple similarity score
+      // 1. Check if detected contains skill name or vice versa
+      if (detectedLower.includes(skillLower) || skillLower.includes(detectedLower)) {
+        const lengthRatio = Math.min(detectedLower.length, skillLower.length) / 
+                           Math.max(detectedLower.length, skillLower.length);
+        
+        if (lengthRatio > bestScore) {
+          bestScore = lengthRatio;
+          bestMatch = skill;
+        }
+      }
+
+      // 2. Calculate Levenshtein similarity for close matches
+      const similarity = this.calculateSimilarity(detectedLower, skillLower);
+      if (similarity > 0.8 && similarity > bestScore) {
+        bestScore = similarity;
+        bestMatch = skill;
+      }
+    }
+
+    // Only return match if score is high enough (80% similarity)
+    return bestScore >= 0.8 ? bestMatch : null;
+  }
+
+  private calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+
+    if (longer.length === 0) return 1.0;
+
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  private levenshteinDistance(str1: string, str2: string): number {
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1,
+          );
+        }
+      }
+    }
+
+    return matrix[str2.length][str1.length];
+  }
+
+  private async parseCharacterSkills(text: string) {
     console.log('=== OCR SKILLS PARSING START ===');
     console.log('Raw text from Tesseract:', text);
 

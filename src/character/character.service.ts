@@ -2,20 +2,32 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
+import { SkillsService } from '../skills/skills.service';
 
 @Injectable()
 export class CharacterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private skillsService: SkillsService,
+  ) {}
 
   async create(userId: string, createCharacterDto: CreateCharacterDto) {
     const { skills, ...rest } = createCharacterDto;
-    return this.prisma.characterTraining.create({
+    
+    const character = await this.prisma.characterTraining.create({
       data: {
         ...rest,
         userId,
         skills: skills ? (skills as any) : undefined, // Convert DTO to plain JSON
       },
     });
+
+    // Increment usage counter for each skill
+    if (skills && skills.length > 0) {
+      await this.incrementSkillUsage(skills);
+    }
+
+    return character;
   }
 
   async findAll(
@@ -116,13 +128,21 @@ export class CharacterService {
     }
 
     const { skills, ...rest } = updateCharacterDto;
-    return this.prisma.characterTraining.update({
+    
+    const updatedCharacter = await this.prisma.characterTraining.update({
       where: { id },
       data: {
         ...rest,
         skills: skills ? (skills as any) : undefined, // Convert DTO to plain JSON
       },
     });
+
+    // Increment usage counter for each skill
+    if (skills && skills.length > 0) {
+      await this.incrementSkillUsage(skills);
+    }
+
+    return updatedCharacter;
   }
 
   async remove(id: string, userId: string) {
@@ -176,5 +196,18 @@ export class CharacterService {
     });
 
     return candidates.slice(0, 10);
+  }
+
+  private async incrementSkillUsage(skills: Array<{ name: string; isRare: boolean }>) {
+    // Increment usage counter for each skill in the database
+    for (const skill of skills) {
+      try {
+        await this.skillsService.incrementUsage(skill.name);
+      } catch (error) {
+        // Skill might not exist in database yet (manual entry)
+        // This is fine - we just skip incrementing
+        console.log(`Skill "${skill.name}" not found in database, skipping increment`);
+      }
+    }
   }
 }
