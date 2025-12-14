@@ -544,7 +544,6 @@ export class OcrService {
             skills = [line];
           }
         }
-        }
       }
 
       for (let skillRaw of skills) {
