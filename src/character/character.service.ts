@@ -200,13 +200,24 @@ export class CharacterService {
 
   private async incrementSkillUsage(skills: Array<{ name: string; isRare: boolean }>) {
     // Increment usage counter for each skill in the database
+    // If skill doesn't exist, create it first
     for (const skill of skills) {
       try {
         await this.skillsService.incrementUsage(skill.name);
       } catch (error) {
-        // Skill might not exist in database yet (manual entry)
-        // This is fine - we just skip incrementing
-        console.log(`Skill "${skill.name}" not found in database, skipping increment`);
+        // Skill doesn't exist in database yet (manual entry)
+        // Create it and then increment
+        console.log(`Skill "${skill.name}" not found, creating it...`);
+        try {
+          await this.skillsService.create({
+            name: skill.name,
+            isRare: skill.isRare,
+          });
+          console.log(`✅ Created new skill: "${skill.name}" (rare: ${skill.isRare})`);
+        } catch (createError) {
+          // Might fail if another request created it simultaneously
+          console.log(`Failed to create skill "${skill.name}", might already exist`);
+        }
       }
     }
   }
